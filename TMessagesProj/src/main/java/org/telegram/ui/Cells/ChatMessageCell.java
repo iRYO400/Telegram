@@ -766,6 +766,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private SparseArray<Rect> accessibilityVirtualViewBounds = new SparseArray<>();
     private int currentFocusedVirtualView = -1;
 
+    public boolean isBeingAnimated = false;
+    protected boolean isOnDrawIntercepted = false;
+
     public ChatMessageCell(Context context) {
         super(context);
 
@@ -9887,7 +9890,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (drawBackground && currentBackgroundDrawable != null && (currentPosition == null || isDrawSelectionBackground() && (currentMessageObject.isMusic() || currentMessageObject.isDocument()))) {
             if (isHighlightedAnimated) {
                 currentBackgroundDrawable.setAlpha((int) (255 * alphaInternal));
-                currentBackgroundDrawable.draw(canvas);
+                drawBackgroundDrawable(canvas);
                 float alpha = highlightProgress >= 300 ? 1.0f : highlightProgress / 300.0f;
                 currentSelectedBackgroundAlpha = alpha;
                 if (currentPosition == null) {
@@ -9895,7 +9898,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     currentBackgroundSelectedDrawable.draw(canvas);
                 }
             } else if (selectedBackgroundProgress != 0 && !(currentMessagesGroup != null && currentMessagesGroup.isDocuments)) {
-                currentBackgroundDrawable.draw(canvas);
+                drawBackgroundDrawable(canvas);
                 currentSelectedBackgroundAlpha = selectedBackgroundProgress;
                 currentBackgroundSelectedDrawable.setAlpha((int) (selectedBackgroundProgress * alphaInternal * 255));
                 currentBackgroundSelectedDrawable.draw(canvas);
@@ -9917,7 +9920,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 } else {
                     currentSelectedBackgroundAlpha = 0;
                     currentBackgroundDrawable.setAlpha((int) (255 * alphaInternal));
-                    currentBackgroundDrawable.draw(canvas);
+                    drawBackgroundDrawable(canvas); // Main call
                 }
             }
             if (currentBackgroundShadowDrawable != null && currentPosition == null) {
@@ -10181,6 +10184,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         updateSelectionTextPosition();
     }
 
+
     public void drawOutboundsContent(Canvas canvas) {
         if (transitionParams.animateBackgroundBoundsInner) {
             if (!transitionParams.transitionBotButtons.isEmpty()) {
@@ -10295,7 +10299,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             currentBackgroundDrawable.setAlpha((int) (getAlpha() * 255));
             currentBackgroundDrawable.setBounds(left, top, right, bottom);
-            currentBackgroundDrawable.draw(canvas);
+            drawBackgroundDrawable(canvas);
             currentBackgroundDrawable.setAlpha(255);
         }
     }
@@ -10987,7 +10991,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
     public void drawTime(Canvas canvas, float alpha, boolean fromParent) {
         for (int i = 0; i < 2; i++) {
-            float curentAplha = alpha;
+            float curentAplha = alpha * timeAlpha;
             if (i == 0 && isDrawSelectionBackground() && currentSelectedBackgroundAlpha == 1f && !shouldDrawTimeOnMedia()) {
                 continue;
             } else if (i == 1 && ((!isDrawSelectionBackground() && currentSelectedBackgroundAlpha == 0) || shouldDrawTimeOnMedia())) {
@@ -13772,5 +13776,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 return (drawClock ? 4 : 0) | (drawError ? 8 : 0);
             }
         }
+    }
+
+    protected void drawBackgroundDrawable(Canvas canvas){
+        if (currentBackgroundDrawable != null)
+            currentBackgroundDrawable.draw(canvas);
     }
 }

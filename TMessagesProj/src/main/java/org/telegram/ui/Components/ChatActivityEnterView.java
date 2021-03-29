@@ -7816,4 +7816,16 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
     protected boolean pannelAnimationEnabled() {
         return true;
     }
+
+    public EditTextCaption getMessageEditText() {
+        return messageEditText;
+    }
+
+    public void takeBounds(Rect rect) {
+        rect.set(getLeft() + textFieldContainer.getLeft() + messageEditText.getLeft(),
+                getTop() + textFieldContainer.getTop() + messageEditText.getTop(),
+                getLeft() + textFieldContainer.getLeft() + messageEditText.getRight(),
+                getTop() + textFieldContainer.getTop() + messageEditText.getBottom()
+        );
+    }
 }

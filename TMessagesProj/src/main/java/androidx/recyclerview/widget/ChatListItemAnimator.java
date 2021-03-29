@@ -991,7 +991,12 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
     }
 
     private void restoreTransitionParams(View view) {
-        view.setAlpha(1f);
+        if (view instanceof ChatMessageCell) {
+            if (!((ChatMessageCell) view).isBeingAnimated)
+                ((ChatMessageCell) view).setAlpha(1f);
+        } else {
+            view.setAlpha(1f);
+        }
         view.setScaleX(1f);
         view.setScaleY(1f);
         view.setTranslationY(0f);
