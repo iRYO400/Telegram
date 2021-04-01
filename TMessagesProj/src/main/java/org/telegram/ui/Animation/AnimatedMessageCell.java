@@ -168,19 +168,26 @@ public class AnimatedMessageCell extends ChatMessageCell {
                     paramsEvaluator.startValue = chatActivity.getChatActivityEnterView().getMessageEditText().getLeft() - AndroidUtilities.dp(11);
                     paramsEvaluator.endValue = getBackgroundDrawableLeft() + AndroidUtilities.dp(11) + getExtraTextX();
                     break;
-                case Y_REPLY:
+                case Y_REPLY: // used only if isReply == true
                     yReplyEvaluator = paramsEvaluator;
-                    paramsEvaluator.startValue = replyStartY - AndroidUtilities.dp(16);
-                    paramsEvaluator.endValue = replyStartY;
+                    if (animationType == AnimationType.BIG_MESSAGE) { // reply with BM
+                        paramsEvaluator.startValue = messageRect.height() - (rootViewRect.bottom - chatActivity.chatActivityEnterViewAnimateFromTop) - AndroidUtilities.dp(40);
+                        paramsEvaluator.endValue = replyStartY;
+                    } else { // reply with SM
+                        paramsEvaluator.startValue = replyStartY - AndroidUtilities.dp(16);
+                        paramsEvaluator.endValue = replyStartY;
+                    }
                     break;
                 case EXPANDING_TOP_BACKGROUND:
-                    if (animationType == AnimationType.BIG_MESSAGE) {
-                        yBigMessageEvaluator = paramsEvaluator;
+                    yBigMessageEvaluator = paramsEvaluator;
+                    if (animationType == AnimationType.BIG_MESSAGE && !isReply) { // BM only
                         paramsEvaluator.startValue = messageRect.height() - (rootViewRect.bottom - chatActivity.chatActivityEnterViewAnimateFromTop);
                         paramsEvaluator.endValue = 0;
-                    } else if (isReply) {
-                        yBigMessageEvaluator = paramsEvaluator;
-                        paramsEvaluator.startValue = -AndroidUtilities.dp(8);
+                    } else if (animationType != AnimationType.BIG_MESSAGE && isReply) { // reply with SM
+                        paramsEvaluator.startValue = -AndroidUtilities.dp(12);
+                        paramsEvaluator.endValue = 0;
+                    } else if (animationType == AnimationType.BIG_MESSAGE) { // reply with BM
+                        paramsEvaluator.startValue = messageRect.height() - (rootViewRect.bottom - chatActivity.chatActivityEnterViewAnimateFromTop) - AndroidUtilities.dp(48);
                         paramsEvaluator.endValue = 0;
                     }
                     break;
@@ -260,7 +267,12 @@ public class AnimatedMessageCell extends ChatMessageCell {
 
                 float tempY = y;
                 if (yBigMessageEvaluator != null) {
-                    tempY = yBigMessageEvaluator.currentValue;
+                    if (animationType == AnimationType.BIG_MESSAGE && !isReply) // BM only
+                        tempY = yBigMessageEvaluator.currentValue;
+                    else if (animationType != AnimationType.BIG_MESSAGE && isReply) // reply with SM
+                        tempY = yBigMessageEvaluator.currentValue;
+                    else if (animationType == AnimationType.BIG_MESSAGE) // reply with BM
+                        tempY = yBigMessageEvaluator.currentValue;
                     Log.d("Bootya", "setDrawableBoundsInner, y " + y + " yPos " + yBigMessageEvaluator.toString());
                 }
                 drawable.setBounds((int) tempX, (int) tempY, messageCell.getBackgroundDrawableRight(), messageCell.getBackgroundDrawableBottom());
@@ -281,9 +293,16 @@ public class AnimatedMessageCell extends ChatMessageCell {
 
     @Override
     protected void canvasDrawTextBlock(Canvas canvas, StaticLayout textLayout) {
-        if (yBigMessageEvaluator != null && !isReply) {
-            clipTextForBigMessage.set(messageRect.left, messageRect.top, messageRect.right, (int) yBigMessageEvaluator.currentValue - AndroidUtilities.dp(6.5f));
-            canvas.clipRect(clipTextForBigMessage);
+        if (animationType == AnimationType.BIG_MESSAGE) {
+            if (yBigMessageEvaluator != null) {
+                if (!isReply) {
+                    clipTextForBigMessage.set(messageRect.left, messageRect.top, messageRect.right, (int) yBigMessageEvaluator.currentValue - AndroidUtilities.dp(6.5f));
+                    canvas.clipRect(clipTextForBigMessage);
+                } else {
+                    clipTextForBigMessage.set(messageRect.left, messageRect.top, messageRect.right, (int) yBigMessageEvaluator.currentValue - AndroidUtilities.dp(6.5f));
+                    canvas.clipRect(clipTextForBigMessage);
+                }
+            }
         }
         textLayout.draw(canvas);
     }

@@ -24,7 +24,7 @@ public class AnimationParams {
 
     public AnimationParams(AnimationParamType type, float x1, float y1, float x2, float y2) {
         this(type);
-        interpolator = PathInterpolatorCompat.create(x1, y1, x2, y2);
+//        interpolator = PathInterpolatorCompat.create(x1, y1, x2, y2); //TODO может не надо, тогда их скорости совпадают
     }
 
     private void initDefaults(AnimationParamType type) {
