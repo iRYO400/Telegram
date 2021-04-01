@@ -15,4 +15,14 @@ public class AnimationParamWrapper {
     public void setCurrentValue(float currentValue) {
         this.currentValue = config.getCalculated(startValue, endValue, currentValue);
     }
+
+    @Override
+    public String toString() {
+        return "{" +
+                "config=" + config.type +
+                ", startValue=" + startValue +
+                ", endValue=" + endValue +
+                ", currentValue=" + currentValue +
+                '}';
+    }
 }

@@ -7863,7 +7863,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     delegate.getTextSelectionHelper().draw(currentMessageObject, block, canvas);
                 }
                 try {
-                    block.textLayout.draw(canvas);
+                    canvasDrawTextBlock(canvas, block.textLayout);
                 } catch (Exception e) {
                     FileLog.e(e);
                 }
@@ -7874,6 +7874,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 canvas.restoreToCount(restore);
             }
         }
+    }
+
+    protected void canvasDrawTextBlock(Canvas canvas, StaticLayout textLayout) {
+        textLayout.draw(canvas);
     }
 
     public void updateCaptionLayout() {

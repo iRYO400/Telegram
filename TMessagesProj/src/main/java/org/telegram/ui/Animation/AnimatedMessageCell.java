@@ -10,6 +10,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.text.StaticLayout;
 import android.view.View;
 
 import com.google.android.exoplayer2.util.Log;
@@ -44,15 +45,16 @@ public class AnimatedMessageCell extends ChatMessageCell {
 
     private AnimationParamWrapper textPosData;
     private AnimationParamWrapper xPosData;
+    private AnimationParamWrapper yPosData;
 
     private final Paint backgroundPaint = new Paint();
 
+    private Rect clipTextForBigMessage;
     private ChatMessageCell messageCell; //TODO replace to backgroundDrawableRight/Bottom
 
     public AnimatedMessageCell(Context context, ChatActivity chatActivity) {
         super(context);
         this.chatActivity = chatActivity;
-
         this.isOnDrawIntercepted = true;
 
         animator = ObjectAnimator.ofFloat(0, 1);
@@ -105,6 +107,7 @@ public class AnimatedMessageCell extends ChatMessageCell {
         if (messageObject.linkDescription != null) {
             return AnimationType.LINK_WITH_PREVIEW;
         } else if (messageObject.linesCount > chatActivity.getChatActivityEnterView().getMessageEditText().getMaxLines()) {
+            clipTextForBigMessage = new Rect();
             return AnimationType.BIG_MESSAGE;
         } else {
             return AnimationType.SMALL_MESSAGE;
@@ -138,6 +141,11 @@ public class AnimatedMessageCell extends ChatMessageCell {
                 case Y:
                     animationParamWrapper.startValue = rootViewRect.bottom - messageRect.height();
                     animationParamWrapper.endValue = messageRect.top + chatActivity.getChatListView().getTop();
+                    break;
+                case Y_EXPANDING_BIG_MESSAGE:
+                    yPosData = animationParamWrapper;
+                    animationParamWrapper.startValue = messageRect.height() - (rootViewRect.bottom - chatActivity.chatActivityEnterViewAnimateFromTop);
+                    animationParamWrapper.endValue = 0;
                     break;
                 case COLOR_CHANGE:
                     startBackgroundColor = Theme.getColor(Theme.key_windowBackgroundWhite);
@@ -196,8 +204,19 @@ public class AnimatedMessageCell extends ChatMessageCell {
     @Override
     public void setDrawableBoundsInner(Drawable drawable, int x, int y, int w, int h) {
         if (isOnDrawIntercepted) {
-            if (drawable != null && xPosData != null) {
-                drawable.setBounds((int) xPosData.currentValue, y, messageCell.getBackgroundDrawableRight(), messageCell.getBackgroundDrawableBottom());
+            if (drawable != null) {
+                float tempX = x;
+                if (xPosData != null) {
+                    Log.d("Bootya", "setDrawableBoundsInner, x " + xPosData.toString());
+                    tempX = xPosData.currentValue;
+                }
+
+                float tempY = y;
+                if (yPosData != null) {
+                    tempY = yPosData.currentValue;
+                    Log.d("Bootya", "setDrawableBoundsInner, y " + y + " yPos " + yPosData.toString());
+                }
+                drawable.setBounds((int) tempX, (int) tempY, messageCell.getBackgroundDrawableRight(), messageCell.getBackgroundDrawableBottom());
             }
         } else {
             super.setDrawableBoundsInner(drawable, x, y, w, h);
@@ -211,6 +230,15 @@ public class AnimatedMessageCell extends ChatMessageCell {
         super.onDraw(canvas);
         if (textPosData != null)
             Theme.chat_msgTextPaint.setTextSize(endTextSize);
+    }
+
+    @Override
+    protected void canvasDrawTextBlock(Canvas canvas, StaticLayout textLayout) {
+        if (yPosData != null) {
+            clipTextForBigMessage.set(messageRect.left, messageRect.top, messageRect.right, (int) yPosData.currentValue - AndroidUtilities.dp(6.5f));
+            canvas.clipRect(clipTextForBigMessage);
+            textLayout.draw(canvas);
+        }
     }
 
     @Override
@@ -228,6 +256,9 @@ public class AnimatedMessageCell extends ChatMessageCell {
 
     private void reset() {
         layout(0, 0, 0, 0);
+        textPosData = null;
+        xPosData = null;
+        yPosData = null;
         setVisibility(View.GONE);
     }
 

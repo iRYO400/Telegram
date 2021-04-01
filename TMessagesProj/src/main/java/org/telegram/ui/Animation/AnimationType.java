@@ -31,6 +31,14 @@ public enum AnimationType {
             configTypes.add(new AnimationParam(AnimationParamType.TEXT_SCALE));
             configTypes.add(new AnimationParam(AnimationParamType.COLOR_CHANGE));
             configTypes.add(new AnimationParam(AnimationParamType.TIME_APPEARS));
+        } else if (this == BIG_MESSAGE) {
+            configTypes.add(new AnimationParam(AnimationParamType.X));
+            configTypes.add(new AnimationParam(AnimationParamType.Y));
+            configTypes.add(new AnimationParam(AnimationParamType.Y_EXPANDING_BIG_MESSAGE));
+            configTypes.add(new AnimationParam(AnimationParamType.BUBBLE_SHAPE));
+            configTypes.add(new AnimationParam(AnimationParamType.TEXT_SCALE));
+            configTypes.add(new AnimationParam(AnimationParamType.COLOR_CHANGE));
+            configTypes.add(new AnimationParam(AnimationParamType.TIME_APPEARS));
         }
 
         return configTypes;
