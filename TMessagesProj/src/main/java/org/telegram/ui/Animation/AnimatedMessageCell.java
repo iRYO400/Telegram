@@ -173,7 +173,7 @@ public class AnimatedMessageCell extends ChatMessageCell {
                     paramsEvaluator.startValue = replyStartY - AndroidUtilities.dp(16);
                     paramsEvaluator.endValue = replyStartY;
                     break;
-                case Y_EXPANDING_BIG_MESSAGE:
+                case EXPANDING_TOP_BACKGROUND:
                     if (animationType == AnimationType.BIG_MESSAGE) {
                         yBigMessageEvaluator = paramsEvaluator;
                         paramsEvaluator.startValue = messageRect.height() - (rootViewRect.bottom - chatActivity.chatActivityEnterViewAnimateFromTop);

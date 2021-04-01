@@ -5,7 +5,7 @@ public enum AnimationParamType {
     X_REPLY("Depend on X", X.startDuration, X.endDuration, X.cp1, X.cp2),
     Y("Y Position", 0, 500, 1, .33f),
     Y_REPLY("Hz hz hz", Y.startDuration, Y.endDuration, Y.cp1, Y.cp2),
-    Y_EXPANDING_BIG_MESSAGE("Depend on Y Position", Y.startDuration, Y.endDuration, Y.cp1, Y.cp2),
+    EXPANDING_TOP_BACKGROUND("Depend on Y Position", Y.startDuration, Y.endDuration, Y.cp1, Y.cp2),
     BUBBLE_SHAPE("Bubble shape", 0, 250, 1, .33f),
     TEXT_SCALE("Text scale", 0, 250, 1, .33f),
     COLOR_CHANGE("Color change", 0, 250, 1, .33f),

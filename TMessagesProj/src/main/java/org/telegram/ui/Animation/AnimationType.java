@@ -29,7 +29,7 @@ public enum AnimationType {
             configTypes.add(new AnimationParams(AnimationParamType.X_REPLY));
             configTypes.add(new AnimationParams(AnimationParamType.Y));
             configTypes.add(new AnimationParams(AnimationParamType.Y_REPLY, .4f, 1.0f, .8f, 1f));
-            configTypes.add(new AnimationParams(AnimationParamType.Y_EXPANDING_BIG_MESSAGE));
+            configTypes.add(new AnimationParams(AnimationParamType.EXPANDING_TOP_BACKGROUND));
             configTypes.add(new AnimationParams(AnimationParamType.BUBBLE_SHAPE));
             configTypes.add(new AnimationParams(AnimationParamType.TEXT_SCALE));
             configTypes.add(new AnimationParams(AnimationParamType.COLOR_CHANGE));
@@ -39,7 +39,7 @@ public enum AnimationType {
             configTypes.add(new AnimationParams(AnimationParamType.X_REPLY));
             configTypes.add(new AnimationParams(AnimationParamType.Y));
             configTypes.add(new AnimationParams(AnimationParamType.Y_REPLY, .4f, 1.0f, .8f, 1f));
-            configTypes.add(new AnimationParams(AnimationParamType.Y_EXPANDING_BIG_MESSAGE));
+            configTypes.add(new AnimationParams(AnimationParamType.EXPANDING_TOP_BACKGROUND));
             configTypes.add(new AnimationParams(AnimationParamType.BUBBLE_SHAPE));
             configTypes.add(new AnimationParams(AnimationParamType.TEXT_SCALE));
             configTypes.add(new AnimationParams(AnimationParamType.COLOR_CHANGE));
