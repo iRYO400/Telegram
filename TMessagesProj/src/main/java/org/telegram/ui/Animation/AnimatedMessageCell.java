@@ -237,8 +237,8 @@ public class AnimatedMessageCell extends ChatMessageCell {
         if (yPosData != null) {
             clipTextForBigMessage.set(messageRect.left, messageRect.top, messageRect.right, (int) yPosData.currentValue - AndroidUtilities.dp(6.5f));
             canvas.clipRect(clipTextForBigMessage);
-            textLayout.draw(canvas);
         }
+        textLayout.draw(canvas);
     }
 
     @Override
