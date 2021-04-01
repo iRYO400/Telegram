@@ -174,9 +174,15 @@ public class AnimatedMessageCell extends ChatMessageCell {
                     paramsEvaluator.endValue = replyStartY;
                     break;
                 case Y_EXPANDING_BIG_MESSAGE:
-                    yBigMessageEvaluator = paramsEvaluator;
-                    paramsEvaluator.startValue = messageRect.height() - (rootViewRect.bottom - chatActivity.chatActivityEnterViewAnimateFromTop);
-                    paramsEvaluator.endValue = 0;
+                    if (animationType == AnimationType.BIG_MESSAGE) {
+                        yBigMessageEvaluator = paramsEvaluator;
+                        paramsEvaluator.startValue = messageRect.height() - (rootViewRect.bottom - chatActivity.chatActivityEnterViewAnimateFromTop);
+                        paramsEvaluator.endValue = 0;
+                    } else if (isReply) {
+                        yBigMessageEvaluator = paramsEvaluator;
+                        paramsEvaluator.startValue = -AndroidUtilities.dp(8);
+                        paramsEvaluator.endValue = 0;
+                    }
                     break;
                 case COLOR_CHANGE:
                     startBackgroundColor = Theme.getColor(Theme.key_windowBackgroundWhite);
@@ -275,7 +281,7 @@ public class AnimatedMessageCell extends ChatMessageCell {
 
     @Override
     protected void canvasDrawTextBlock(Canvas canvas, StaticLayout textLayout) {
-        if (yBigMessageEvaluator != null) {
+        if (yBigMessageEvaluator != null && !isReply) {
             clipTextForBigMessage.set(messageRect.left, messageRect.top, messageRect.right, (int) yBigMessageEvaluator.currentValue - AndroidUtilities.dp(6.5f));
             canvas.clipRect(clipTextForBigMessage);
         }
