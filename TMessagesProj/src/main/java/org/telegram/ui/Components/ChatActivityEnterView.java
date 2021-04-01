@@ -2706,6 +2706,13 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         return t;
     }
 
+    public int getTopViewHeight() {
+        if (topView != null && topView.getVisibility() == View.VISIBLE) {
+            return topView.getHeight();
+        }
+        return 0;
+    }
+
     @Override
     protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
         boolean clip = child == topView || child == textFieldContainer;

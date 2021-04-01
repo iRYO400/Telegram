@@ -648,12 +648,12 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private StaticLayout replyTextLayout;
     private ImageReceiver replyImageReceiver;
     private int replyStartX;
-    private int replyStartY;
+    protected int replyStartY;
     private int replyNameWidth;
     private int replyNameOffset;
     private int replyTextWidth;
     private int replyTextOffset;
-    private boolean needReplyImage;
+    protected boolean needReplyImage;
     private boolean replyPressed;
     private TLRPC.PhotoSize currentReplyPhoto;
 
@@ -6589,7 +6589,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
     }
 
-    private int getExtraTextX() {
+    protected int getExtraTextX() {
         if (SharedConfig.bubbleRadius >= 15) {
             return AndroidUtilities.dp(2);
         } else if (SharedConfig.bubbleRadius >= 11) {
@@ -10572,7 +10572,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 }
             }
             if (currentPosition == null || currentPosition.minY == 0 && currentPosition.minX == 0) {
-                canvas.drawRect(replyStartX, replyStartY, replyStartX + AndroidUtilities.dp(2), replyStartY + AndroidUtilities.dp(35), Theme.chat_replyLinePaint);
+                canvasDrawReplyLine(canvas, replyStartX, replyStartY, replyStartX + AndroidUtilities.dp(2), replyStartY + AndroidUtilities.dp(35), Theme.chat_replyLinePaint);
                 if (needReplyImage) {
                     replyImageReceiver.setImageCoords(replyStartX + AndroidUtilities.dp(10), replyStartY, AndroidUtilities.dp(35), AndroidUtilities.dp(35));
                     replyImageReceiver.draw(canvas);
@@ -10580,14 +10580,12 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
                 if (replyNameLayout != null) {
                     canvas.save();
-                    canvas.translate(replyStartX - replyNameOffset + AndroidUtilities.dp(10 + (needReplyImage ? 44 : 0)), replyStartY);
-                    replyNameLayout.draw(canvas);
+                    canvasDrawReplayName(canvas, replyNameLayout, replyStartX - replyNameOffset + AndroidUtilities.dp(10 + (needReplyImage ? 44 : 0)), replyStartY);
                     canvas.restore();
                 }
                 if (replyTextLayout != null) {
                     canvas.save();
-                    canvas.translate(forwardNameX = replyStartX - replyTextOffset + AndroidUtilities.dp(10 + (needReplyImage ? 44 : 0)), replyStartY + AndroidUtilities.dp(19));
-                    replyTextLayout.draw(canvas);
+                    canvasDrawReplyText(canvas, replyTextLayout, forwardNameX = replyStartX - replyTextOffset + AndroidUtilities.dp(10 + (needReplyImage ? 44 : 0)), replyStartY + AndroidUtilities.dp(19));
                     canvas.restore();
                 }
             }
@@ -10596,6 +10594,20 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (restore != Integer.MIN_VALUE) {
             canvas.restoreToCount(restore);
         }
+    }
+
+    protected void canvasDrawReplyLine(Canvas canvas, float left, float top, float right, float bottom, Paint paint){
+        canvas.drawRect(left, top, right, bottom, paint);
+    }
+
+    protected void canvasDrawReplayName(Canvas canvas, StaticLayout replyNameLayout, float dx, float dy) {
+        canvas.translate(dx, dy);
+        replyNameLayout.draw(canvas);
+    }
+
+    protected void canvasDrawReplyText(Canvas canvas, StaticLayout replyTextLayout, float dx, float dy) {
+        canvas.translate(dx, dy);
+        replyTextLayout.draw(canvas);
     }
 
     public boolean hasCaptionLayout() {

@@ -1,6 +1,10 @@
 package org.telegram.ui.Animation;
 
-public class AnimationParam {
+import android.view.animation.Interpolator;
+
+import androidx.core.view.animation.PathInterpolatorCompat;
+
+public class AnimationParams {
 
     public final AnimationParamType type;
 
@@ -10,10 +14,17 @@ public class AnimationParam {
     protected float cp1;
     protected float cp2;
 
-    public AnimationParam(AnimationParamType type) {
+    private Interpolator interpolator;
+
+    public AnimationParams(AnimationParamType type) {
         this.type = type;
         maxDuration = 500; // TODO take it from Saved
         initDefaults(type);
+    }
+
+    public AnimationParams(AnimationParamType type, float x1, float y1, float x2, float y2) {
+        this(type);
+        interpolator = PathInterpolatorCompat.create(x1, y1, x2, y2);
     }
 
     private void initDefaults(AnimationParamType type) {
@@ -27,6 +38,8 @@ public class AnimationParam {
         if (time >= startDuration && time <= endDuration) {
             float max = endDuration - startDuration;
             float pos = time - startDuration;
+            if (interpolator != null)
+                return start + interpolator.getInterpolation(time) * (end - start);
             return interpolate(start, end, pos / max);
         }
         if (time < startDuration)

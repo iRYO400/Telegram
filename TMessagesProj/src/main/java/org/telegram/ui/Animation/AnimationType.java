@@ -22,23 +22,27 @@ public enum AnimationType {
         return name;
     }
 
-    public List<AnimationParam> getConfigWrappers() {
-        List<AnimationParam> configTypes = new ArrayList<>();
+    public List<AnimationParams> getConfigWrappers() {
+        List<AnimationParams> configTypes = new ArrayList<>();
         if (this == SMALL_MESSAGE) {
-            configTypes.add(new AnimationParam(AnimationParamType.X));
-            configTypes.add(new AnimationParam(AnimationParamType.Y));
-            configTypes.add(new AnimationParam(AnimationParamType.BUBBLE_SHAPE));
-            configTypes.add(new AnimationParam(AnimationParamType.TEXT_SCALE));
-            configTypes.add(new AnimationParam(AnimationParamType.COLOR_CHANGE));
-            configTypes.add(new AnimationParam(AnimationParamType.TIME_APPEARS));
+            configTypes.add(new AnimationParams(AnimationParamType.X));
+            configTypes.add(new AnimationParams(AnimationParamType.X_REPLY));
+            configTypes.add(new AnimationParams(AnimationParamType.Y));
+            configTypes.add(new AnimationParams(AnimationParamType.Y_REPLY, .2f, 1.0f, .6f, 1f));
+            configTypes.add(new AnimationParams(AnimationParamType.BUBBLE_SHAPE));
+            configTypes.add(new AnimationParams(AnimationParamType.TEXT_SCALE));
+            configTypes.add(new AnimationParams(AnimationParamType.COLOR_CHANGE));
+            configTypes.add(new AnimationParams(AnimationParamType.TIME_APPEARS));
         } else if (this == BIG_MESSAGE) {
-            configTypes.add(new AnimationParam(AnimationParamType.X));
-            configTypes.add(new AnimationParam(AnimationParamType.Y));
-            configTypes.add(new AnimationParam(AnimationParamType.Y_EXPANDING_BIG_MESSAGE));
-            configTypes.add(new AnimationParam(AnimationParamType.BUBBLE_SHAPE));
-            configTypes.add(new AnimationParam(AnimationParamType.TEXT_SCALE));
-            configTypes.add(new AnimationParam(AnimationParamType.COLOR_CHANGE));
-            configTypes.add(new AnimationParam(AnimationParamType.TIME_APPEARS));
+            configTypes.add(new AnimationParams(AnimationParamType.X));
+            configTypes.add(new AnimationParams(AnimationParamType.X_REPLY));
+            configTypes.add(new AnimationParams(AnimationParamType.Y));
+            configTypes.add(new AnimationParams(AnimationParamType.Y_REPLY, .2f, 1.0f, .6f, 1f));
+            configTypes.add(new AnimationParams(AnimationParamType.Y_EXPANDING_BIG_MESSAGE));
+            configTypes.add(new AnimationParams(AnimationParamType.BUBBLE_SHAPE));
+            configTypes.add(new AnimationParams(AnimationParamType.TEXT_SCALE));
+            configTypes.add(new AnimationParams(AnimationParamType.COLOR_CHANGE));
+            configTypes.add(new AnimationParams(AnimationParamType.TIME_APPEARS));
         }
 
         return configTypes;
