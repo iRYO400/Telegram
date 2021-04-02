@@ -1,15 +1,24 @@
 package org.telegram.ui.Animation;
 
 public enum AnimationParamType {
-    X("X Position", 0, 500, 1, .33f),
-    X_REPLY("Depend on X", X.startDuration, X.endDuration, X.cp1, X.cp2),
-    Y("Y Position", 0, 500, 1, .33f),
-    Y_REPLY("Hz hz hz", Y.startDuration, Y.endDuration, Y.cp1, Y.cp2),
-    EXPANDING_TOP_BACKGROUND("Depend on Y Position", Y.startDuration, Y.endDuration, Y.cp1, Y.cp2),
+    X("X Position", 0, 250, 1, .33f),
+    Y("Y Position", 0, 250, 1, .33f),
+
+    X_REPLY("X of Reply", X.startDuration, X.endDuration, X.cp1, X.cp2),
+    Y_REPLY("Y of Reply", Y.startDuration, Y.endDuration, Y.cp1, Y.cp2),
+
+    LEFT_BACKGROUND("Left Background", X.startDuration, X.endDuration, X.cp1, X.cp2),
+    TOP_BACKGROUND("Top background", Y.startDuration, Y.endDuration, Y.cp1, Y.cp2),
+
     BUBBLE_SHAPE("Bubble shape", 0, 250, 1, .33f),
+
     TEXT_SCALE("Text scale", 0, 250, 1, .33f),
+
     COLOR_CHANGE("Color change", 0, 250, 1, .33f),
-    TIME_APPEARS("Time appears", 0, 500, 1, .33f);
+
+    TIME_APPEARS("Time appears", 0, 500, 1, .33f),
+
+    EMOJI_SCALE("Emoji Appears", 0, 500, 1, .33f);
 
     private final String name;
     private final long startDuration;

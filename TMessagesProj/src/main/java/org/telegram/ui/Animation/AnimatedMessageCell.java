@@ -15,6 +15,7 @@ import android.view.View;
 
 import com.google.android.exoplayer2.util.Log;
 
+import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.MessageObject;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.ChatMessageCell;
@@ -31,7 +32,7 @@ public class AnimatedMessageCell extends ChatMessageCell {
     private final ChatActivity chatActivity;
 
     public boolean isAnimating = false;
-    private AnimationType animationType = AnimationType.SMALL_MESSAGE;
+    private AnimationType animationType;
     private List<AnimationParams> animationConfigs = new ArrayList<>();
     private List<ParamsEvaluator> paramsEvaluators = new ArrayList<>();
     private final ValueAnimator animator;
@@ -60,10 +61,10 @@ public class AnimatedMessageCell extends ChatMessageCell {
     private final Rect messageRect = new Rect();
 
     private ParamsEvaluator scaleTextEvaluator;
-    private ParamsEvaluator xEvaluator;
+    private ParamsEvaluator leftBackgroundEvaluator;
     private ParamsEvaluator xReplyEvaluator;
     private ParamsEvaluator yReplyEvaluator;
-    private ParamsEvaluator yBigMessageEvaluator;
+    private ParamsEvaluator topBackgroundEvaluator;
 
     private final Paint backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
@@ -72,7 +73,8 @@ public class AnimatedMessageCell extends ChatMessageCell {
     private boolean isReply = false;
 
     private Rect clipTextForBigMessage;
-    private ChatMessageCell messageCell; //TODO replace to backgroundDrawableRight/Bottom
+    private ChatMessageCell messageCell;
+    private final int[] messageCellPosition = new int[2];
 
     public AnimatedMessageCell(Context context, ChatActivity chatActivity) {
         super(context);
@@ -98,28 +100,28 @@ public class AnimatedMessageCell extends ChatMessageCell {
         backgroundPaint.setStyle(Paint.Style.FILL);
     }
 
-    public void stealParams(ChatMessageCell messageCell) {
-        this.isAnimating = true;
-        this.messageCell = messageCell;
-        this.chatActivity.getChatListItemAnimator().setAdditionalMoveDuration(1000); //TODO from Settings
-        setMessageObject(messageCell.getMessageObject(), null, messageCell.isPinnedBottom(), messageCell.isPinnedTop());
-        this.messageRect.set(messageCell.getLeft(), messageCell.getTop(), messageCell.getRight(), messageCell.getBottom());
-        if (messageCell.getMessageObject().replyMessageObject != null) {
-            isReply = true;
-            yOffset = chatActivity.getChatActivityEnterView().getTopViewHeight();
+    public boolean stealParams(ChatMessageCell messageCell) {
+        animationType = defineAnimationType(messageCell.getMessageObject());
+        if (animationType == AnimationType.BIG_MESSAGE || animationType == AnimationType.SMALL_MESSAGE || animationType == AnimationType.SINGLE_EMOJI) {
+            this.isAnimating = true;
+            this.messageCell = messageCell;
+            this.chatActivity.getChatListItemAnimator().setAdditionalMoveDuration(1000); //TODO from Settings
+            setMessageObject(messageCell.getMessageObject(), null, messageCell.isPinnedBottom(), messageCell.isPinnedTop());
+            this.messageRect.set(messageCell.getLeft(), messageCell.getTop(), messageCell.getRight(), messageCell.getBottom());
+
+            if (messageCell.getMessageObject().replyMessageObject != null) {
+                isReply = true;
+                yOffset = chatActivity.getChatActivityEnterView().getTopViewHeight();
+            }
+            setEnterViewRect(chatActivity.getChatActivityEnterView());
+
+            animator.setDuration(1000); //TODO from settings
+            animator.start();
+            return true;
+        } else {
+            reset();
+            return false;
         }
-        setEnterViewRect(chatActivity.getChatActivityEnterView());
-
-        animator.setDuration(1000); //TODO from settings
-        animator.start();
-    }
-
-    @Override
-    public void setMessageObject(MessageObject messageObject, MessageObject.GroupedMessages groupedMessages, boolean bottomNear, boolean topNear) {
-        super.setMessageObject(messageObject, groupedMessages, bottomNear, topNear);
-        animationType = defineAnimationType(messageObject);
-        animationConfigs = defineAnimationConfigs(animationType);
-        paramsEvaluators = defineAnimationDataPoints(animationConfigs);
     }
 
     private AnimationType defineAnimationType(MessageObject messageObject) {
@@ -139,6 +141,13 @@ public class AnimatedMessageCell extends ChatMessageCell {
         } else {
             return AnimationType.SMALL_MESSAGE;
         }
+    }
+
+    @Override
+    public void setMessageObject(MessageObject messageObject, MessageObject.GroupedMessages groupedMessages, boolean bottomNear, boolean topNear) {
+        super.setMessageObject(messageObject, groupedMessages, bottomNear, topNear);
+        animationConfigs = defineAnimationConfigs(animationType);
+        paramsEvaluators = defineAnimationDataPoints(animationConfigs);
     }
 
     private List<AnimationParams> defineAnimationConfigs(AnimationType animationType) {
@@ -161,13 +170,13 @@ public class AnimatedMessageCell extends ChatMessageCell {
         for (ParamsEvaluator paramsEvaluator : paramsEvaluators) {
             switch (paramsEvaluator.params.type) {
                 case X:
-                    xEvaluator = paramsEvaluator;
                     paramsEvaluator.startValue = chatActivity.getChatActivityEnterView().getMessageEditText().getLeft() - dp(11);
-                    paramsEvaluator.endValue = getBackgroundDrawableLeft() + dp(0.25f);
+                    paramsEvaluator.endValue = getBackgroundDrawableLeft() + dp(11) + getExtraTextX();
                     break;
                 case Y:
                     paramsEvaluator.startValue = rootViewRect.bottom - messageRect.height();
-                    paramsEvaluator.endValue = messageRect.top + chatActivity.getChatListView().getTop() + yOffset;
+                    paramsEvaluator.endValue = messageCellPosition[1];
+//                    paramsEvaluator.endValue = messageRect.top + chatActivity.getChatListView().getTop() + yOffset;
                     break;
                 case X_REPLY:
                     xReplyEvaluator = paramsEvaluator;
@@ -187,8 +196,13 @@ public class AnimatedMessageCell extends ChatMessageCell {
                         paramsEvaluator.endValue = replyStartY;
                     }
                     break;
-                case EXPANDING_TOP_BACKGROUND:
-                    yBigMessageEvaluator = paramsEvaluator;
+                case LEFT_BACKGROUND:
+                    leftBackgroundEvaluator = paramsEvaluator;
+                    paramsEvaluator.startValue = chatActivity.getChatActivityEnterView().getMessageEditText().getLeft() - dp(11);
+                    paramsEvaluator.endValue = getBackgroundDrawableLeft();
+                    break;
+                case TOP_BACKGROUND:
+                    topBackgroundEvaluator = paramsEvaluator;
                     if (animationType == AnimationType.BIG_MESSAGE && !isReply) { // BM only
                         paramsEvaluator.startValue = messageRect.height() - (rootViewRect.bottom - chatActivity.chatActivityEnterViewAnimateFromTop);
                         paramsEvaluator.endValue = 0;
@@ -208,7 +222,7 @@ public class AnimatedMessageCell extends ChatMessageCell {
                     if (isReply) {
                         startReplyNameColor = Theme.getColor(Theme.key_chat_replyPanelName);
                         startReplyTextColor = Theme.getColor(Theme.key_chat_replyPanelMessage);
-                        startReplyLineColor = Theme.getColor(Theme.key_chat_replyPanelLine);
+                        startReplyLineColor = 0x009B9B9B;
 
                         endReplyNameColor = Theme.getColor(Theme.key_chat_outReplyNameText);
                         endReplyTextColor = Theme.getColor(Theme.key_chat_outReplyMessageText);
@@ -235,22 +249,26 @@ public class AnimatedMessageCell extends ChatMessageCell {
     private void onUpdateAnimation(float animatedValue) {
         if (animatedValue <= 0)
             return;
-
+        int x = getLeft();
         int y = getTop();
+        setMessageCellPosition();
         for (ParamsEvaluator paramsEvaluator : paramsEvaluators) {
             paramsEvaluator.setCurrentValue(animatedValue);
             switch (paramsEvaluator.params.type) {
                 case X:
-                    paramsEvaluator.endValue = getBackgroundDrawableLeft() + dp(0.25f);
+                    x = (int) paramsEvaluator.currentValue;
                     break;
                 case Y:
+                    paramsEvaluator.endValue = messageCellPosition[1];
                     y = (int) paramsEvaluator.currentValue;
+                    break;
+                case LEFT_BACKGROUND:
+                    paramsEvaluator.endValue = getBackgroundDrawableLeft() + dp(0.25f);
                     break;
                 case X_REPLY:
                     paramsEvaluator.endValue = getBackgroundDrawableLeft() + dp(11) + getExtraTextX();
                     break;
                 case Y_REPLY:
-                    paramsEvaluator.startValue = replyStartY - dp(16);
                     paramsEvaluator.endValue = replyStartY;
                     break;
                 case COLOR_CHANGE:
@@ -269,7 +287,7 @@ public class AnimatedMessageCell extends ChatMessageCell {
                     break;
             }
         }
-        Log.d("Bootya", "animatedValue " + animatedValue + " y " + y + " messageRect.width() " + messageRect.width() + " messageRect.height() " + messageRect.height());
+        Log.d("Bootya", "animatedValue " + animatedValue + " x: " + x + " y: " + y + " messageRect.width() " + messageRect.width() + " messageRect.height() " + messageRect.height());
         layout(0, y, messageRect.width(), y + messageRect.height());
         if (getVisibility() != View.VISIBLE)
             setVisibility(View.VISIBLE);
@@ -277,24 +295,27 @@ public class AnimatedMessageCell extends ChatMessageCell {
     }
 
     @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+    }
+
+    @Override
     public void setDrawableBoundsInner(Drawable drawable, int x, int y, int w, int h) {
-        if (isOnDrawIntercepted) {
+        if (isOnDrawIntercepted && (animationType == AnimationType.SMALL_MESSAGE || animationType == AnimationType.BIG_MESSAGE)) {
             if (drawable != null) {
                 float tempX = x;
-                if (xEvaluator != null) {
-                    Log.d("Bootya", "setDrawableBoundsInner, x " + xEvaluator.toString());
-                    tempX = xEvaluator.currentValue;
+                if (leftBackgroundEvaluator != null) {
+                    tempX = leftBackgroundEvaluator.currentValue;
                 }
 
                 float tempY = y;
-                if (yBigMessageEvaluator != null) {
+                if (topBackgroundEvaluator != null) {
                     if (animationType == AnimationType.BIG_MESSAGE && !isReply) // BM only
-                        tempY = yBigMessageEvaluator.currentValue;
+                        tempY = topBackgroundEvaluator.currentValue;
                     else if (animationType != AnimationType.BIG_MESSAGE && isReply) // reply with SM
-                        tempY = yBigMessageEvaluator.currentValue;
+                        tempY = topBackgroundEvaluator.currentValue;
                     else if (animationType == AnimationType.BIG_MESSAGE) // reply with BM
-                        tempY = yBigMessageEvaluator.currentValue;
-                    Log.d("Bootya", "setDrawableBoundsInner, y " + y + " yPos " + yBigMessageEvaluator.toString());
+                        tempY = topBackgroundEvaluator.currentValue;
                 }
                 drawable.setBounds((int) tempX, (int) tempY, messageCell.getBackgroundDrawableRight(), messageCell.getBackgroundDrawableBottom());
             }
@@ -313,14 +334,20 @@ public class AnimatedMessageCell extends ChatMessageCell {
     }
 
     @Override
+    protected void canvasDrawTimeLayout(Canvas canvas, StaticLayout timeLayout, float drawTimeX, float drawTimeY) {
+        canvas.translate(drawTimeX, messageRect.height() - timeLayout.getHeight() - AndroidUtilities.dp(isPinnedBottom() || isPinnedTop() ? 7.5f : 6.5f));
+        timeLayout.draw(canvas);
+    }
+
+    @Override
     protected void canvasDrawTextBlock(Canvas canvas, StaticLayout textLayout) {
         if (animationType == AnimationType.BIG_MESSAGE) {
-            if (yBigMessageEvaluator != null) {
+            if (topBackgroundEvaluator != null) {
                 if (!isReply) {
-                    clipTextForBigMessage.set(messageRect.left, messageRect.top, messageRect.right, (int) yBigMessageEvaluator.currentValue - dp(6.5f));
+                    clipTextForBigMessage.set(messageRect.left, messageRect.top, messageRect.right, (int) topBackgroundEvaluator.currentValue - dp(6.5f));
                     canvas.clipRect(clipTextForBigMessage);
                 } else {
-                    clipTextForBigMessage.set(messageRect.left, messageRect.top, messageRect.right, (int) yBigMessageEvaluator.currentValue - dp(6.5f));
+                    clipTextForBigMessage.set(messageRect.left, messageRect.top, messageRect.right, (int) topBackgroundEvaluator.currentValue - dp(6.5f));
                     canvas.clipRect(clipTextForBigMessage);
                 }
             }
@@ -332,8 +359,8 @@ public class AnimatedMessageCell extends ChatMessageCell {
     protected void canvasDrawReplyLine(Canvas canvas, float left, float top, float right, float bottom, Paint paint) {
         float tempLeft = left;
         float tempRight = right;
-        if (xEvaluator != null) {
-            tempLeft = xEvaluator.currentValue + dp(12);
+        if (leftBackgroundEvaluator != null) {
+            tempLeft = leftBackgroundEvaluator.currentValue + dp(12);
             tempRight = tempLeft + dp(2);
             Theme.chat_replyLinePaint.setColor(currentReplyLineColor);
         }
@@ -383,11 +410,16 @@ public class AnimatedMessageCell extends ChatMessageCell {
         isAnimating = false;
         isReply = false;
         scaleTextEvaluator = null;
-        xEvaluator = null;
-        yBigMessageEvaluator = null;
+        leftBackgroundEvaluator = null;
+        topBackgroundEvaluator = null;
         xReplyEvaluator = null;
         yReplyEvaluator = null;
         yOffset = 0;
+    }
+
+    private void setMessageCellPosition() {
+        if (messageCell != null)
+            messageCell.getLocationOnScreen(messageCellPosition);
     }
 
     public static int getColor(int start, int end, float value) {

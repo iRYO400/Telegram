@@ -65,6 +65,8 @@ import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.animation.Interpolator;
 import android.widget.Toast;
 
+import com.google.android.exoplayer2.util.Log;
+
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
@@ -6614,6 +6616,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (changed || !wasLayout) {
             layoutWidth = getMeasuredWidth();
             layoutHeight = getMeasuredHeight() - substractBackgroundHeight;
+            Log.d("Bootya", "layoutHeight " + layoutHeight);
             if (timeTextWidth < 0) {
                 timeTextWidth = AndroidUtilities.dp(10);
             }
@@ -11220,8 +11223,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     Theme.chat_timePaint.setAlpha(oldAlpha);
                 }
             } else {
-                canvas.translate(drawTimeX = timeTitleTimeX + additionalX, drawTimeY = layoutHeight - AndroidUtilities.dp(pinnedBottom || pinnedTop ? 7.5f : 6.5f) - timeLayout.getHeight() + timeYOffset);
-                timeLayout.draw(canvas);
+                drawTimeX = timeTitleTimeX + additionalX;
+                drawTimeY = layoutHeight - AndroidUtilities.dp(pinnedBottom || pinnedTop ? 7.5f : 6.5f) - timeLayout.getHeight() + timeYOffset;
+                canvasDrawTimeLayout(canvas, timeLayout, drawTimeX, drawTimeY);
             }
             canvas.restore();
         }
@@ -11260,6 +11264,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
         }
         canvas.restore();
+    }
+
+    protected void canvasDrawTimeLayout(Canvas canvas, StaticLayout timeLayout, float drawTimeX, float drawTimeY) {
+        canvas.translate(drawTimeX, drawTimeY);
+        timeLayout.draw(canvas);
     }
 
     private void createStatusDrawableAnimator(int lastStatusDrawableParams, int currentStatus, boolean fromParent) {

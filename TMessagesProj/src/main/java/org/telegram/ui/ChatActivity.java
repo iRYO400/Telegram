@@ -2926,7 +2926,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                             childTop -= keyboardSize;
                         }
                     }
-                    child.layout(childLeft, childTop, childLeft + width, childTop + height);
+
+                    if (!(child instanceof AnimatedMessageCell))
+                        child.layout(childLeft, childTop, childLeft + width, childTop + height);
                 }
 
                 invalidateChatListViewTopPadding();
@@ -6225,7 +6227,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             });
             messageCell.isChat = false;
             messageCell.setFullyDraw(true);
-            contentView.addView(messageCell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM));
+            contentView.addView(messageCell);
         }
         chatActivityEnterTopView = new ChatActivityEnterTopView(context) {
             @Override
@@ -21494,36 +21496,37 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                 @Override
                                 public boolean onPreDraw() {
                                     messageCell.getViewTreeObserver().removeOnPreDrawListener(this);
-                                    messageCell.isBeingAnimated = true;
-                                    messageCell.setVisibility(View.INVISIBLE);
-                                    messageCell.getMessageObject().isOnDrawLocked = false;
-                                    messageCell.getTransitionParams().ignoreAlpha = true;
-                                    messageCell.setAlpha(0.0f);
-                                    messageCell.setTimeAlpha(0.0f);
-
                                     AnimatedMessageCell messageFromPool = chatMessageAnimatedPool.get(0);
                                     for(int i = 0; i < chatMessageAnimatedPool.size(); i++) {
                                         if (!messageFromPool.isAnimating)
                                             break;
                                         messageFromPool = chatMessageAnimatedPool.get(i);
                                     }
-                                    messageFromPool.stealParams(messageCell);
+                                    if (messageFromPool.stealParams(messageCell)) {
+                                        messageCell.isBeingAnimated = true;
+                                        messageCell.setVisibility(View.INVISIBLE);
+                                        messageCell.getMessageObject().isOnDrawLocked = false;
+                                        messageCell.getTransitionParams().ignoreAlpha = true;
+                                        messageCell.setAlpha(0.0f);
+                                        messageCell.setTimeAlpha(0.0f);
 
-
-                                    AnimatorSet animatorSet = new AnimatorSet();
-                                    animatorSet.playTogether(ObjectAnimator.ofFloat(messageCell, View.ALPHA, 1.0f));
-                                    animatorSet.setStartDelay(1000 - 100); //TODO from settings
-                                    animatorSet.setDuration(50);
-                                    animatorSet.setInterpolator(new AccelerateInterpolator());
-                                    animatorSet.addListener(new AnimatorListenerAdapter() {
-                                        @Override
-                                        public void onAnimationEnd(Animator animation) {
-                                            messageCell.isBeingAnimated = false;
-                                            messageCell.setVisibility(View.VISIBLE);
-                                            messageCell.getTransitionParams().ignoreAlpha = false;
-                                        }
-                                    });
-                                    animatorSet.start();
+                                        AnimatorSet animatorSet = new AnimatorSet();
+                                        animatorSet.playTogether(ObjectAnimator.ofFloat(messageCell, View.ALPHA, 1.0f));
+                                        animatorSet.setStartDelay(1000 - 100); //TODO from settings
+                                        animatorSet.setDuration(50);
+                                        animatorSet.setInterpolator(new AccelerateInterpolator());
+                                        animatorSet.addListener(new AnimatorListenerAdapter() {
+                                            @Override
+                                            public void onAnimationEnd(Animator animation) {
+                                                messageCell.isBeingAnimated = false;
+                                                messageCell.setVisibility(View.VISIBLE);
+                                                messageCell.getTransitionParams().ignoreAlpha = false;
+                                                }
+                                        });
+                                        animatorSet.start();
+                                    } else {
+                                        messageCell.getMessageObject().isOnDrawLocked = false;
+                                    }
                                     return true;
                                 }
                             });
