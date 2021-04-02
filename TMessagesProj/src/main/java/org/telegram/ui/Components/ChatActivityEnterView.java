@@ -3802,7 +3802,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             }
         }
         if (processSendingText(message, notify, scheduleDate)) {
-            messageEditText.setText("");
+            AndroidUtilities.runOnUIThread(() -> messageEditText.setText(""), 50);
             lastTypingTimeSend = 0;
             if (delegate != null) {
                 delegate.onMessageSend(message, notify, scheduleDate);
