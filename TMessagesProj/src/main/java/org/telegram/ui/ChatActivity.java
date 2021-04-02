@@ -244,7 +244,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private int chatInviterId;
 
     private ArrayList<ChatMessageCell> chatMessageCellsCache = new ArrayList<>();
-    private SparseArray<AnimatedMessageCell> chatMessageAnimatedPool = new SparseArray<AnimatedMessageCell>();
+    private ArrayList<AnimatedMessageCell> chatMessageAnimatedPool = new ArrayList<>();
     private HashMap<MessageObject, Boolean> alredyPlayedStickers = new HashMap<>();
 
     private Dialog closeChatDialog;
@@ -1641,7 +1641,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
         }
         if (chatMessageAnimatedPool.size() <= 0) {
-            chatMessageAnimatedPool.put(0, new AnimatedMessageCell(context, this)); //0 is contentType, e.g. regular message
+            chatMessageAnimatedPool.add(new AnimatedMessageCell(context, this));
+            chatMessageAnimatedPool.add(new AnimatedMessageCell(context, this));
+            chatMessageAnimatedPool.add(new AnimatedMessageCell(context, this));
+            chatMessageAnimatedPool.add(new AnimatedMessageCell(context, this));
+            chatMessageAnimatedPool.add(new AnimatedMessageCell(context, this));
         }
         for (int a = 1; a >= 0; a--) {
             selectedMessagesIds[a].clear();
@@ -6211,8 +6215,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         }
         contentView.addView(chatActivityEnterView, contentView.getChildCount() - 1, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.BOTTOM));
 
-        for(int i = 0, nsize = chatMessageAnimatedPool.size(); i < nsize; i++) {
-            AnimatedMessageCell messageCell = chatMessageAnimatedPool.valueAt(i);
+        for(int i = 0; i < chatMessageAnimatedPool.size(); i++) {
+            AnimatedMessageCell messageCell = chatMessageAnimatedPool.get(i);
             messageCell.setDelegate(new ChatMessageCell.ChatMessageCellDelegate() {
                 @Override
                 public TextSelectionHelper.ChatListTextSelectionHelper getTextSelectionHelper() {
@@ -7113,6 +7117,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         } else {
             presentFragment(fragment, false);
         }
+    }
+
+    public ChatListItemAnimator getChatListItemAnimator() {
+        return chatListItemAniamtor;
     }
 
     @Override
@@ -14822,8 +14830,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     }
                 }
                 addToPolls(obj, null);
-                Log.d("Bootya", "messageType " + obj.type +  " msgOwnerId "+ obj.messageOwner.id + " chatMode" + chatMode + " message " + obj.toString());
+
                 if (a == 0 && obj.messageOwner.id < 0 && chatMode != MODE_SCHEDULED) {
+                    obj.isOnDrawLocked = true;
                     animatingMessageObjects.add(obj);
                 }
 
@@ -21397,10 +21406,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         startMessageUnselect();
                     }
                     int index;
-                    Log.d("Bootya", "onBindViewHolder: animatingMessageObjects " + animatingMessageObjects.size() + " " + animatingMessageObjects.toString());
                     if ((index = animatingMessageObjects.indexOf(message)) != -1) {
                         animatingMessageObjects.remove(index);
-                        Log.d("Bootya", "instantCameraView.getTextureView() != null " + (instantCameraView.getTextureView() != null));
                         if (instantCameraView.getTextureView() != null) {
                             messageCell.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
                                 @Override
@@ -21488,18 +21495,25 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                 public boolean onPreDraw() {
                                     messageCell.getViewTreeObserver().removeOnPreDrawListener(this);
                                     messageCell.isBeingAnimated = true;
-                                    AnimatedMessageCell messageFromPool = chatMessageAnimatedPool.get(0);
-                                    messageFromPool.stealParams(messageCell);
-
                                     messageCell.setVisibility(View.INVISIBLE);
+                                    messageCell.getMessageObject().isOnDrawLocked = false;
                                     messageCell.getTransitionParams().ignoreAlpha = true;
                                     messageCell.setAlpha(0.0f);
                                     messageCell.setTimeAlpha(0.0f);
 
+                                    AnimatedMessageCell messageFromPool = chatMessageAnimatedPool.get(0);
+                                    for(int i = 0; i < chatMessageAnimatedPool.size(); i++) {
+                                        if (!messageFromPool.isAnimating)
+                                            break;
+                                        messageFromPool = chatMessageAnimatedPool.get(i);
+                                    }
+                                    messageFromPool.stealParams(messageCell);
+
+
                                     AnimatorSet animatorSet = new AnimatorSet();
                                     animatorSet.playTogether(ObjectAnimator.ofFloat(messageCell, View.ALPHA, 1.0f));
-                                    animatorSet.setStartDelay(900);
-                                    animatorSet.setDuration(100);
+                                    animatorSet.setStartDelay(1000 - 100); //TODO from settings
+                                    animatorSet.setDuration(50);
                                     animatorSet.setInterpolator(new AccelerateInterpolator());
                                     animatorSet.addListener(new AnimatorListenerAdapter() {
                                         @Override

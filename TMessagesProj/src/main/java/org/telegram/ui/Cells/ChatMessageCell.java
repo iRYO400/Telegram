@@ -9622,6 +9622,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             return;
         }
 
+        if (currentMessageObject.isOnDrawLocked) {
+            return;
+        }
         if (!wasLayout && !animationRunning) {
             forceLayout();
             return;

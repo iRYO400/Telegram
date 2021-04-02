@@ -30,6 +30,7 @@ public class AnimatedMessageCell extends ChatMessageCell {
 
     private final ChatActivity chatActivity;
 
+    public boolean isAnimating = false;
     private AnimationType animationType = AnimationType.SMALL_MESSAGE;
     private List<AnimationParams> animationConfigs = new ArrayList<>();
     private List<ParamsEvaluator> paramsEvaluators = new ArrayList<>();
@@ -98,7 +99,9 @@ public class AnimatedMessageCell extends ChatMessageCell {
     }
 
     public void stealParams(ChatMessageCell messageCell) {
+        this.isAnimating = true;
         this.messageCell = messageCell;
+        this.chatActivity.getChatListItemAnimator().setAdditionalMoveDuration(1000); //TODO from Settings
         setMessageObject(messageCell.getMessageObject(), null, messageCell.isPinnedBottom(), messageCell.isPinnedTop());
         this.messageRect.set(messageCell.getLeft(), messageCell.getTop(), messageCell.getRight(), messageCell.getBottom());
         if (messageCell.getMessageObject().replyMessageObject != null) {
@@ -377,6 +380,7 @@ public class AnimatedMessageCell extends ChatMessageCell {
     private void reset() {
         setVisibility(View.GONE);
         layout(0, 0, 0, 0);
+        isAnimating = false;
         isReply = false;
         scaleTextEvaluator = null;
         xEvaluator = null;

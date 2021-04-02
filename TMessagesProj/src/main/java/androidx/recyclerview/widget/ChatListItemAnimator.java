@@ -47,6 +47,8 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
     private RecyclerView.ViewHolder greetingsSticker;
     private ChatGreetingsView chatGreetingsView;
 
+    private int additionalMoveDuration = 0;
+
     public ChatListItemAnimator(ChatActivity activity, RecyclerListView listView) {
         this.activity = activity;
         this.recyclerListView = listView;
@@ -1367,7 +1369,13 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
 
     @Override
     public long getMoveDuration() {
+        if (additionalMoveDuration != 0)
+            return additionalMoveDuration - 220;
         return 220;
+    }
+
+    public void setAdditionalMoveDuration(int additionalMoveDuration) {
+        this.additionalMoveDuration = additionalMoveDuration;
     }
 
     @Override
