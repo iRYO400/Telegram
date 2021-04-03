@@ -41,8 +41,11 @@ public enum AnimationType {
             configTypes.add(new AnimationParams(AnimationParamType.TIME_APPEARS));
         } else if (this == SINGLE_EMOJI) {
 
+            configTypes.add(new AnimationParams(AnimationParamType.X));
             configTypes.add(new AnimationParams(AnimationParamType.Y));
+
             configTypes.add(new AnimationParams(AnimationParamType.EMOJI_SCALE));
+
             configTypes.add(new AnimationParams(AnimationParamType.TIME_APPEARS));
         }
 

@@ -16,6 +16,8 @@ import android.view.View;
 import com.google.android.exoplayer2.util.Log;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ImageLoader;
+import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.MessageObject;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.ChatMessageCell;
@@ -59,6 +61,10 @@ public class AnimatedMessageCell extends ChatMessageCell {
 
     private final Rect rootViewRect = new Rect();
     private final Rect messageRect = new Rect();
+    private final Rect currentViewRect = new Rect();
+
+    private final Rect startEmojiRect = new Rect();
+    private final Rect endEmojiRect = new Rect();
 
     private ParamsEvaluator scaleTextEvaluator;
     private ParamsEvaluator leftBackgroundEvaluator;
@@ -68,7 +74,6 @@ public class AnimatedMessageCell extends ChatMessageCell {
 
     private final Paint backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-    private int yOffset = 0;
 
     private boolean isReply = false;
 
@@ -93,6 +98,7 @@ public class AnimatedMessageCell extends ChatMessageCell {
 
             @Override
             public void onAnimationStart(Animator animation) {
+                setMessageCellPosition();
                 onAnimationStarted();
             }
         });
@@ -101,6 +107,9 @@ public class AnimatedMessageCell extends ChatMessageCell {
     }
 
     public boolean stealParams(ChatMessageCell messageCell) {
+        if (this.messageCell == messageCell)
+            return true;
+
         animationType = defineAnimationType(messageCell.getMessageObject());
         if (animationType == AnimationType.BIG_MESSAGE || animationType == AnimationType.SMALL_MESSAGE || animationType == AnimationType.SINGLE_EMOJI) {
             this.isAnimating = true;
@@ -111,9 +120,9 @@ public class AnimatedMessageCell extends ChatMessageCell {
 
             if (messageCell.getMessageObject().replyMessageObject != null) {
                 isReply = true;
-                yOffset = chatActivity.getChatActivityEnterView().getTopViewHeight();
             }
             setEnterViewRect(chatActivity.getChatActivityEnterView());
+            prepareSingleEmoji(messageCell);
 
             animator.setDuration(1000); //TODO from settings
             animator.start();
@@ -166,16 +175,29 @@ public class AnimatedMessageCell extends ChatMessageCell {
         chatActivityEnterView.takeBounds(rootViewRect);
     }
 
+    private void prepareSingleEmoji(ChatMessageCell messageCell) {
+        if (animationType == AnimationType.SINGLE_EMOJI) {
+            ImageLoader.getInstance().loadImageForImageReceiver(getPhotoImage());
+        }
+    }
+
     private void onAnimationStarted() {
         for (ParamsEvaluator paramsEvaluator : paramsEvaluators) {
             switch (paramsEvaluator.params.type) {
                 case X:
-                    paramsEvaluator.startValue = chatActivity.getChatActivityEnterView().getMessageEditText().getLeft() - dp(11);
-                    paramsEvaluator.endValue = getBackgroundDrawableLeft() + dp(11) + getExtraTextX();
+                    if (animationType == AnimationType.SINGLE_EMOJI) {
+                        paramsEvaluator.startValue = rootViewRect.right - messageRect.width();
+                        paramsEvaluator.endValue = messageRect.left - chatActivity.getChatListView().getLeft();
+                    }
                     break;
                 case Y:
-                    paramsEvaluator.startValue = rootViewRect.bottom - messageRect.height();
-                    paramsEvaluator.endValue = messageCellPosition[1];
+                    if (animationType == AnimationType.SINGLE_EMOJI) {
+                        paramsEvaluator.startValue = rootViewRect.bottom - messageRect.height() + dp(6);
+                        paramsEvaluator.endValue = messageRect.top + chatActivity.getChatListView().getTop();
+                    } else {
+                        paramsEvaluator.startValue = rootViewRect.bottom - messageRect.height();
+                        paramsEvaluator.endValue = messageCellPosition[1];
+                    }
                     break;
                 case X_REPLY:
                     xReplyEvaluator = paramsEvaluator;
@@ -237,6 +259,22 @@ public class AnimatedMessageCell extends ChatMessageCell {
                     paramsEvaluator.startValue = 0;
                     paramsEvaluator.endValue = 1;
                     break;
+                case EMOJI_SCALE:
+                    ImageReceiver emoji = getPhotoImage();
+                    if (emoji != null) {
+                        float scale = 0.2f;
+                        float scaleHeight = scale * emoji.getImageHeight();
+                        float scaleWidth = scale * emoji.getImageWidth();
+                        float startX = messageRect.width() - rootViewRect.width() + chatActivity.getChatActivityEnterView().getMessageEditText().getPaddingLeft();
+                        float startY = messageRect.height() - rootViewRect.height() + chatActivity.getChatActivityEnterView().getMessageEditText().getPaddingTop();
+                        startEmojiRect.set((int) startX, (int) startY, (int) (startX + scaleWidth), (int) (startY + scaleHeight));
+
+                        int endX = (int) emoji.getImageX() + messageRect.width() - getBackgroundWidth() - dp(6);
+                        endEmojiRect.set(endX, (int) emoji.getImageY(), (int) (endX + emoji.getImageWidth()), (int) (emoji.getImageY() + emoji.getImageHeight()));
+                    }
+                    paramsEvaluator.startValue = 0;
+                    paramsEvaluator.endValue = 1;
+                    break;
                 case TIME_APPEARS:
                     paramsEvaluator.startValue = 0;
                     paramsEvaluator.endValue = 1;
@@ -255,7 +293,8 @@ public class AnimatedMessageCell extends ChatMessageCell {
             paramsEvaluator.setCurrentValue(animatedValue);
             switch (paramsEvaluator.params.type) {
                 case X:
-                    x = (int) paramsEvaluator.currentValue;
+                    if (animationType == AnimationType.SINGLE_EMOJI)
+                        x = (int) paramsEvaluator.currentValue;
                     break;
                 case Y:
                     paramsEvaluator.endValue = messageCellPosition[1];
@@ -279,6 +318,14 @@ public class AnimatedMessageCell extends ChatMessageCell {
                         currentReplyLineColor = getColor(startReplyLineColor, endReplyLineColor, paramsEvaluator.currentValue);
                     }
                     break;
+                case EMOJI_SCALE:
+                    currentViewRect.set(
+                            getValue(startEmojiRect.left, endEmojiRect.left, paramsEvaluator.currentValue),
+                            getValue(startEmojiRect.top, endEmojiRect.top, paramsEvaluator.currentValue),
+                            getValue(startEmojiRect.right, endEmojiRect.right, paramsEvaluator.currentValue),
+                            getValue(startEmojiRect.bottom, endEmojiRect.bottom, paramsEvaluator.currentValue)
+                    );
+                    break;
                 case TIME_APPEARS:
                     setTimeAlpha(paramsEvaluator.currentValue);
                     break;
@@ -287,7 +334,7 @@ public class AnimatedMessageCell extends ChatMessageCell {
             }
         }
         Log.d("Bootya", "animatedValue " + animatedValue + " x: " + x + " y: " + y + " messageRect.width() " + messageRect.width() + " messageRect.height() " + messageRect.height());
-        layout(0, y, messageRect.width(), y + messageRect.height());
+        layout(x, y, messageRect.width(), y + messageRect.height());
         if (getVisibility() != View.VISIBLE)
             setVisibility(View.VISIBLE);
         invalidate();
@@ -325,6 +372,20 @@ public class AnimatedMessageCell extends ChatMessageCell {
         super.onDraw(canvas);
         if (scaleTextEvaluator != null)
             Theme.chat_msgTextPaint.setTextSize(endTextSize);
+    }
+
+    @Override
+    protected void drawContent(Canvas canvas) {
+        if (animationType == AnimationType.SINGLE_EMOJI) {
+            ImageReceiver emoji = getPhotoImage();
+            if (emoji != null) {
+                emoji.setImageCoords(currentViewRect.left, currentViewRect.top, currentViewRect.width(), currentViewRect.height());
+                emoji.setCurrentAlpha(1);
+                emoji.draw(canvas);
+            }
+        } else {
+            super.drawContent(canvas);
+        }
     }
 
     @Override
@@ -408,7 +469,6 @@ public class AnimatedMessageCell extends ChatMessageCell {
         topBackgroundEvaluator = null;
         xReplyEvaluator = null;
         yReplyEvaluator = null;
-        yOffset = 0;
     }
 
     private void setMessageCellPosition() {

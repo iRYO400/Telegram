@@ -365,7 +365,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private long lastNamesAnimationTime;
     private int documentAttachType;
     private TLRPC.Document documentAttach;
-    private boolean drawPhotoImage;
+    protected boolean drawPhotoImage;
     private boolean hasLinkPreview;
     private boolean hasOldCaptionPreview;
     private boolean hasGamePreview;
@@ -6904,7 +6904,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
     }
 
-    private void drawContent(Canvas canvas) {
+    protected void drawContent(Canvas canvas) {
         if (needNewVisiblePart && currentMessageObject.type == 0) {
             getLocalVisibleRect(scrollRect);
             setVisiblePart(scrollRect.top, scrollRect.bottom - scrollRect.top, parentHeight, parentViewTopOffset);
@@ -13809,5 +13809,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     protected void drawBackgroundDrawable(Canvas canvas){
         if (currentBackgroundDrawable != null)
             currentBackgroundDrawable.draw(canvas);
+    }
+
+    public int getBackgroundWidth() {
+        return backgroundWidth;
     }
 }

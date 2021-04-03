@@ -18,7 +18,7 @@ public enum AnimationParamType {
 
     TIME_APPEARS("Time appears", 0, 500, 1, .33f),
 
-    EMOJI_SCALE("Emoji Appears", 0, 500, 1, .33f);
+    EMOJI_SCALE("Emoji Appears", 100, 250, 1, .33f);
 
     private final String name;
     private final long startDuration;
