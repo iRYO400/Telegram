@@ -176,7 +176,6 @@ public class AnimatedMessageCell extends ChatMessageCell {
                 case Y:
                     paramsEvaluator.startValue = rootViewRect.bottom - messageRect.height();
                     paramsEvaluator.endValue = messageCellPosition[1];
-//                    paramsEvaluator.endValue = messageRect.top + chatActivity.getChatListView().getTop() + yOffset;
                     break;
                 case X_REPLY:
                     xReplyEvaluator = paramsEvaluator;
@@ -292,11 +291,6 @@ public class AnimatedMessageCell extends ChatMessageCell {
         if (getVisibility() != View.VISIBLE)
             setVisibility(View.VISIBLE);
         invalidate();
-    }
-
-    @Override
-    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-        super.onLayout(changed, left, top, right, bottom);
     }
 
     @Override
