@@ -77,8 +77,10 @@ public class AnimatedMessageCell extends ChatMessageCell {
 
     private boolean isReply = false;
 
+    private final Rect clipForTopBar = new Rect();
     private Rect clipTextForBigMessage;
     private ChatMessageCell messageCell;
+    private final int[] thisMessageCellPosition = new int[2];
     private final int[] messageCellPosition = new int[2];
 
     public AnimatedMessageCell(Context context, ChatActivity chatActivity) {
@@ -122,7 +124,7 @@ public class AnimatedMessageCell extends ChatMessageCell {
                 isReply = true;
             }
             setEnterViewRect(chatActivity.getChatActivityEnterView());
-            prepareSingleEmoji(messageCell);
+            prepareSingleEmoji();
 
             animator.setDuration(1000); //TODO from settings
             animator.start();
@@ -175,7 +177,7 @@ public class AnimatedMessageCell extends ChatMessageCell {
         chatActivityEnterView.takeBounds(rootViewRect);
     }
 
-    private void prepareSingleEmoji(ChatMessageCell messageCell) {
+    private void prepareSingleEmoji() {
         if (animationType == AnimationType.SINGLE_EMOJI) {
             ImageLoader.getInstance().loadImageForImageReceiver(getPhotoImage());
         }
@@ -369,6 +371,18 @@ public class AnimatedMessageCell extends ChatMessageCell {
     protected void onDraw(Canvas canvas) {
         if (scaleTextEvaluator != null)
             Theme.chat_msgTextPaint.setTextSize(getValue((int) startTextSize, (int) endTextSize, (int) scaleTextEvaluator.currentValue));
+
+        int diffY = thisMessageCellPosition[1] - chatActivity.getActionBar().getBottom();
+        if (diffY < 0) {
+            clipForTopBar.set(
+                    chatActivity.getChatListView().getLeft(),
+                    diffY * -1,
+                    chatActivity.getChatListView().getRight(),
+                    5000
+            );
+            canvas.clipRect(clipForTopBar);
+        }
+
         super.onDraw(canvas);
         if (scaleTextEvaluator != null)
             Theme.chat_msgTextPaint.setTextSize(endTextSize);
@@ -399,10 +413,10 @@ public class AnimatedMessageCell extends ChatMessageCell {
         if (animationType == AnimationType.BIG_MESSAGE) {
             if (topBackgroundEvaluator != null) {
                 if (!isReply) {
-                    clipTextForBigMessage.set(messageRect.left, messageRect.top, messageRect.right, (int) topBackgroundEvaluator.currentValue - dp(6.5f));
+                    clipTextForBigMessage.set(messageRect.left, (int) topBackgroundEvaluator.currentValue - dp(6.5f), messageRect.right, messageRect.bottom);
                     canvas.clipRect(clipTextForBigMessage);
                 } else {
-                    clipTextForBigMessage.set(messageRect.left, messageRect.top, messageRect.right, (int) topBackgroundEvaluator.currentValue - dp(6.5f));
+                    clipTextForBigMessage.set(messageRect.left, (int) topBackgroundEvaluator.currentValue - dp(6.5f), messageRect.right, messageRect.height());
                     canvas.clipRect(clipTextForBigMessage);
                 }
             }
@@ -474,6 +488,7 @@ public class AnimatedMessageCell extends ChatMessageCell {
     private void setMessageCellPosition() {
         if (messageCell != null)
             messageCell.getLocationOnScreen(messageCellPosition);
+        this.getLocationOnScreen(thisMessageCellPosition);
     }
 
     public static int getColor(int start, int end, float value) {
