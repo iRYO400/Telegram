@@ -6616,7 +6616,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (changed || !wasLayout) {
             layoutWidth = getMeasuredWidth();
             layoutHeight = getMeasuredHeight() - substractBackgroundHeight;
-            Log.d("Bootya", "layoutHeight " + layoutHeight);
             if (timeTextWidth < 0) {
                 timeTextWidth = AndroidUtilities.dp(10);
             }

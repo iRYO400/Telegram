@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -19,7 +20,9 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ImageLoader;
 import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.MessageObject;
+import org.telegram.messenger.MessagesController;
 import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.Animation.editor.ChatAnimationActivity;
 import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.ChatActivityEnterView;
@@ -83,6 +86,8 @@ public class AnimatedMessageCell extends ChatMessageCell {
     private final int[] thisMessageCellPosition = new int[2];
     private final int[] messageCellPosition = new int[2];
 
+    public long maxDuration = 500;
+
     public AnimatedMessageCell(Context context, ChatActivity chatActivity) {
         super(context);
         this.chatActivity = chatActivity;
@@ -116,7 +121,7 @@ public class AnimatedMessageCell extends ChatMessageCell {
         if (animationType == AnimationType.BIG_MESSAGE || animationType == AnimationType.SMALL_MESSAGE || animationType == AnimationType.SINGLE_EMOJI) {
             this.isAnimating = true;
             this.messageCell = messageCell;
-            this.chatActivity.getChatListItemAnimator().setAdditionalMoveDuration(1000); //TODO from Settings
+            this.chatActivity.getChatListItemAnimator().setAdditionalMoveDuration((int) maxDuration); //TODO from Settings
             setMessageObject(messageCell.getMessageObject(), null, messageCell.isPinnedBottom(), messageCell.isPinnedTop());
             this.messageRect.set(messageCell.getLeft(), messageCell.getTop(), messageCell.getRight(), messageCell.getBottom());
 
@@ -126,7 +131,7 @@ public class AnimatedMessageCell extends ChatMessageCell {
             setEnterViewRect(chatActivity.getChatActivityEnterView());
             prepareSingleEmoji();
 
-            animator.setDuration(1000); //TODO from settings
+            animator.setDuration(maxDuration); //TODO from settings
             animator.start();
             return true;
         } else {
@@ -139,10 +144,10 @@ public class AnimatedMessageCell extends ChatMessageCell {
         switch (messageObject.type) {
             case 15:
                 return AnimationType.SINGLE_EMOJI;
-            case 5:
-                return AnimationType.VOICE_MESSAGE;
-            case 2:
-                return AnimationType.VIDEO_MESSAGE;
+//            case 5:
+//                return AnimationType.VOICE_MESSAGE;
+//            case 2:
+//                return AnimationType.VIDEO_MESSAGE;
         }
         if (messageObject.linkDescription != null) {
             return AnimationType.LINK_WITH_PREVIEW;
@@ -157,12 +162,46 @@ public class AnimatedMessageCell extends ChatMessageCell {
     @Override
     public void setMessageObject(MessageObject messageObject, MessageObject.GroupedMessages groupedMessages, boolean bottomNear, boolean topNear) {
         super.setMessageObject(messageObject, groupedMessages, bottomNear, topNear);
-        animationConfigs = defineAnimationConfigs(animationType);
+        maxDuration = getMaxDuration(animationType);
+        animationConfigs = defineAnimationConfigs(animationType, maxDuration);
+
         paramsEvaluators = defineAnimationDataPoints(animationConfigs);
     }
 
-    private List<AnimationParams> defineAnimationConfigs(AnimationType animationType) {
-        return animationType.getConfigWrappers();
+    private long getMaxDuration(AnimationType animationType) {
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        String durationKey = animationType.getName() + "_duration";
+        return preferences.getLong(durationKey, 500);
+    }
+
+    private List<AnimationParams> defineAnimationConfigs(AnimationType animationType, long maxDuration) {
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+
+        if (!preferences.getBoolean(ChatAnimationActivity.KEY_ANIMATIONS_CHANGED, false))
+            return animationType.getConfigWrappers();
+
+        ArrayList<AnimationParams> animationParamsList = new ArrayList<>();
+        List<AnimationParams> paramsList = animationType.getConfigWrappersForSettings();
+        for (AnimationParams params : paramsList) {
+            String prefixParamsKey = animationType.getName() + params.getName();
+            float startDuration = preferences.getFloat(prefixParamsKey + "_startDuration", -1);
+            float endDuration = preferences.getFloat(prefixParamsKey + "_endDuration", -1);
+            float cp1 = preferences.getFloat(prefixParamsKey + "_cp1", -1);
+            float cp2 = preferences.getFloat(prefixParamsKey + "_cp2", -1);
+            if (params.type == AnimationParamType.X) {
+                animationParamsList.add(new AnimationParams(AnimationParamType.X_REPLY, maxDuration, startDuration, endDuration, cp1, cp2));
+                animationParamsList.add(new AnimationParams(AnimationParamType.LEFT_BACKGROUND, maxDuration, startDuration, endDuration, cp1, cp2));
+            }
+            if (params.type == AnimationParamType.Y) {
+                animationParamsList.add(new AnimationParams(AnimationParamType.Y_REPLY, maxDuration, startDuration, endDuration, cp1, cp2));
+                animationParamsList.add(new AnimationParams(AnimationParamType.TOP_BACKGROUND, maxDuration, startDuration, endDuration, cp1, cp2));
+            }
+            animationParamsList.add(
+                    new AnimationParams(params.type, maxDuration, startDuration, endDuration, cp1, cp2)
+            );
+        }
+
+        return animationParamsList;
     }
 
     private List<ParamsEvaluator> defineAnimationDataPoints(List<AnimationParams> animationConfigs) {

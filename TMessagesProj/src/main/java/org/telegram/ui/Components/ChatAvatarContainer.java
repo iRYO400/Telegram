@@ -48,7 +48,7 @@ import org.telegram.ui.ProfileActivity;
 
 public class ChatAvatarContainer extends FrameLayout implements NotificationCenter.NotificationCenterDelegate {
 
-    private BackupImageView avatarImageView;
+    public BackupImageView avatarImageView;
     private SimpleTextView titleTextView;
     private SimpleTextView subtitleTextView;
     private ImageView timeItem;

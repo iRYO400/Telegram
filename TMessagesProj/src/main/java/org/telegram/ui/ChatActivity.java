@@ -150,6 +150,7 @@ import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Adapters.MentionsAdapter;
 import org.telegram.ui.Adapters.MessagesSearchAdapter;
 import org.telegram.ui.Adapters.StickersAdapter;
+import org.telegram.ui.Animation.editor.ChatAnimationActivity;
 import org.telegram.ui.Cells.BotHelpCell;
 import org.telegram.ui.Cells.BotSwitchCell;
 import org.telegram.ui.Cells.ChatActionCell;
@@ -1641,11 +1642,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
         }
         if (chatMessageAnimatedPool.size() <= 0) {
-            chatMessageAnimatedPool.add(new AnimatedMessageCell(context, this));
-            chatMessageAnimatedPool.add(new AnimatedMessageCell(context, this));
-            chatMessageAnimatedPool.add(new AnimatedMessageCell(context, this));
-            chatMessageAnimatedPool.add(new AnimatedMessageCell(context, this));
-            chatMessageAnimatedPool.add(new AnimatedMessageCell(context, this));
+            for (int i = 0; i < 10; i++){
+                chatMessageAnimatedPool.add(new AnimatedMessageCell(context, this));
+            }
         }
         for (int a = 1; a >= 0; a--) {
             selectedMessagesIds[a].clear();
@@ -1926,6 +1925,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         }
         actionBar.addView(avatarContainer, 0, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT, !inPreviewMode ? 56 : (chatMode == MODE_PINNED ? 10 : 0), 0, 40, 0));
 
+        avatarContainer.avatarImageView.setOnClickListener(v -> presentFragment(new ChatAnimationActivity()));
         ActionBarMenu menu = actionBar.createMenu();
 
         if (currentEncryptedChat == null && chatMode == 0) {
@@ -21512,7 +21512,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
                                         AnimatorSet animatorSet = new AnimatorSet();
                                         animatorSet.playTogether(ObjectAnimator.ofFloat(messageCell, View.ALPHA, 1.0f));
-                                        animatorSet.setStartDelay(1000 - 100); //TODO from settings
+                                        animatorSet.setStartDelay(messageFromPool.maxDuration - 100); //TODO from settings
                                         animatorSet.setDuration(50);
                                         animatorSet.setInterpolator(new AccelerateInterpolator());
                                         animatorSet.addListener(new AnimatorListenerAdapter() {

@@ -2,21 +2,48 @@ package org.telegram.ui.Animation;
 
 public class AnimationParams {
 
+    private final static float NOT_FOUND_VAL = -1f;
+
     public final AnimationParamType type;
 
-    protected float maxDuration;
-    protected float startDuration;
-    protected float endDuration;
-    protected float cp1;
-    protected float cp2;
+    public float maxDuration;
+    public float startDuration;
+    public float endDuration;
+    public float cp1;
+    public float cp2;
 
     public AnimationParams(AnimationParamType type) {
         this.type = type;
-        maxDuration = 500; // TODO take it from Saved
         initDefaults(type);
     }
 
+    public AnimationParams(AnimationParamType type, float maxDuration, float startDuration, float endDuration, float cp1, float cp2) {
+        this.type = type;
+        this.maxDuration = maxDuration;
+
+        if (startDuration == NOT_FOUND_VAL)
+            this.startDuration = type.getStartDuration() / maxDuration;
+        else
+            this.startDuration = startDuration;
+
+        if (endDuration == NOT_FOUND_VAL)
+            this.endDuration = type.getEndDuration() / maxDuration;
+        else
+            this.endDuration = endDuration;
+
+        if (cp1 == NOT_FOUND_VAL)
+            this.cp1 = type.getCp1();
+        else
+            this.cp1 = cp1;
+
+        if (cp2 == NOT_FOUND_VAL)
+            this.cp2 = type.getCp2();
+        else
+            this.cp2 = cp2;
+    }
+
     private void initDefaults(AnimationParamType type) {
+        maxDuration = 500;
         startDuration = (type.getStartDuration() / maxDuration);
         endDuration = (type.getEndDuration() / maxDuration);
         cp1 = type.getCp1();
@@ -34,7 +61,7 @@ public class AnimationParams {
         return end;
     }
 
-    private float interpolate(float start, float end, float f) {
+    public float interpolate(float start, float end, float f) {
         return start + getBezierCoordinateY(getXForTime(f)) * (end - start);
     }
 
@@ -60,5 +87,9 @@ public class AnimationParams {
             x -= z / (c + x * (2 * b + 3 * a * x));
         }
         return x;
+    }
+
+    public String getName() {
+        return "_" + type.getName();
     }
 }
