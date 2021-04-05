@@ -76,7 +76,7 @@ import androidx.core.graphics.drawable.IconCompat;
 @SuppressWarnings("unchecked")
 public class MediaDataController extends BaseController {
 
-    public static String SHORTCUT_CATEGORY = "org.telegram.messenger.SHORTCUT_SHARE";
+    public static String SHORTCUT_CATEGORY = "org.telegram.messenger.qalaigram.SHORTCUT_SHARE";
 
     private static volatile MediaDataController[] Instance = new MediaDataController[UserConfig.MAX_ACCOUNT_COUNT];
     public static MediaDataController getInstance(int num) {
