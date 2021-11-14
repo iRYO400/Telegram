@@ -390,6 +390,14 @@
     <string name="MegaPrivateInfo">Private groups can only be joined if you were invited or have an invite link.</string>
     <string name="ChannelLinkTitle">Permanent link</string>
     <string name="ChannelInviteLinkTitle">Invite Link</string>
+    <string name="GroupSavingContentTitle">Saving content</string>
+    <string name="RestrictSavingContent">Restrict saving content</string>
+    <string name="GroupSavingContentInfo">Participants won\'t be able to forward messages from this group or save media files.</string>
+    <string name="ChannelSavingContentInfo">Participants won\'t be able to forward messages from this channel or save media files.</string>
+    <string name="GroupForwardsRestrictedHint">Forwards from this group are restricted</string>
+    <string name="ChannelForwardsRestrictedHint">Forwards from this channel are restricted</string>
+    <string name="TypePrivateRestricted">Private restricted</string>
+    <string name="TypePrivateRestrictedGroup">Private restricted</string>
     <string name="GroupAddMembers">Add Members</string>
     <string name="ChannelAddSubscribers">Add Subscribers</string>
     <string name="LeaveChannel">Leave Channel</string>

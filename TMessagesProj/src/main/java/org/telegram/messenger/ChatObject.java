@@ -1568,6 +1568,10 @@ public class ChatObject {
         return canUserDoAction(chat, ACTION_PIN) || ChatObject.isChannel(chat) && !chat.megagroup && chat.admin_rights != null && chat.admin_rights.edit_messages;
     }
 
+    public static boolean canForwardMessages(TLRPC.Chat chat) {
+        return (isChannel(chat) || isChannelOrGiga(chat) || isMegagroup(chat) || chat.participants_count > 2) && !chat.noforwards;// || chat.creator;
+    }
+
     public static boolean isChannel(long chatId, int currentAccount) {
         TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(chatId);
         return chat instanceof TLRPC.TL_channel || chat instanceof TLRPC.TL_channelForbidden;

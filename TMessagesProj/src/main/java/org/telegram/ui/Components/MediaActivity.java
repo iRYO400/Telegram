@@ -176,7 +176,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
 
             @Override
             public TLRPC.Chat getCurrentChat() {
-                return null;
+                return getMessagesController().getChat(-dialogId);
             }
 
             @Override

@@ -1,7 +1,6 @@
 package org.telegram.ui.Components;
 
 import static org.telegram.messenger.MediaDataController.MEDIA_PHOTOVIDEO;
-import static org.telegram.messenger.MediaDataController.getMediaType;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -30,6 +29,7 @@ import android.transition.TransitionManager;
 import android.transition.TransitionSet;
 import android.transition.TransitionValues;
 import android.transition.Visibility;
+import android.util.Log;
 import android.util.SparseArray;
 import android.util.SparseBooleanArray;
 import android.util.TypedValue;
@@ -55,8 +55,6 @@ import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.google.android.exoplayer2.util.Log;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
@@ -745,6 +743,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 TLRPC.ChatFull chatFull = (TLRPC.ChatFull) args[0];
                 if (dialogId < 0 && chatFull.id == -dialogId) {
                     setChatInfo(chatFull);
+
                 }
             }
         }
@@ -1067,6 +1066,9 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
 
     private boolean isActionModeShowed;
 
+    private boolean allowForward = true;
+    private HintView noForwardHint;
+    private boolean isChannel;
     final Delegate delegate;
 
     public SharedMediaLayout(Context context, long did, SharedMediaPreloader preloader, int commonGroupsCount, ArrayList<Integer> sortedUsers, TLRPC.ChatFull chatInfo, boolean membersFirst, BaseFragment parent, Delegate delegate, int viewType) {
@@ -1116,6 +1118,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         profileActivity.getNotificationCenter().addObserver(this, NotificationCenter.messagePlayingDidReset);
         profileActivity.getNotificationCenter().addObserver(this, NotificationCenter.messagePlayingPlayStateChanged);
         profileActivity.getNotificationCenter().addObserver(this, NotificationCenter.messagePlayingDidStart);
+        profileActivity.getNotificationCenter().addObserver(this, NotificationCenter.chatInfoDidLoad);
 
         for (int a = 0; a < 10; a++) {
             //cellCache.add(new SharedPhotoVideoCell(context));
@@ -1425,13 +1428,34 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             actionModeViews.add(gotoItem);
             gotoItem.setOnClickListener(v -> onActionBarItemClick(gotochat));
 
-            forwardItem = new ActionBarMenuItem(context, null, Theme.getColor(Theme.key_actionBarActionModeDefaultSelector), Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2), false);
+            if (delegate.getCurrentChat() != null) {
+                allowForward = ChatObject.canForwardMessages(delegate.getCurrentChat());
+            }
+            int background = Theme.getColor(Theme.key_actionBarActionModeDefaultSelector);
+            int iconColor = Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2);
+            if (!allowForward) {
+                background = 0;
+                iconColor = Theme.getColor(Theme.key_windowBackgroundWhiteGrayLine);
+            }
+            forwardItem = new ActionBarMenuItem(context, null, background, iconColor, false);
             forwardItem.setIcon(R.drawable.msg_forward);
             forwardItem.setContentDescription(LocaleController.getString("Forward", R.string.Forward));
             forwardItem.setDuplicateParentStateEnabled(false);
             actionModeLayout.addView(forwardItem, new LinearLayout.LayoutParams(AndroidUtilities.dp(54), ViewGroup.LayoutParams.MATCH_PARENT));
             actionModeViews.add(forwardItem);
-            forwardItem.setOnClickListener(v -> onActionBarItemClick(forward));
+            if (allowForward) {
+                forwardItem.setOnClickListener(v -> onActionBarItemClick(forward));
+            } else {
+                forwardItem.setOnClickListener(v -> {
+                    if (delegate.getCurrentChat() != null) {
+                        isChannel = ChatObject.isChannel(delegate.getCurrentChat()) && !delegate.getCurrentChat().megagroup;
+                    } else {
+                        isChannel = true; // is okay?
+                    }
+                    String hint = isChannel ? LocaleController.getString( "ChannelForwardsRestrictedHint" , R.string.ChannelForwardsRestrictedHint) : LocaleController.getString( "GroupForwardsRestrictedHint" , R.string.GroupForwardsRestrictedHint);
+                    showRestrictHint(hint, v);
+                });
+            }
         }
         deleteItem = new ActionBarMenuItem(context, null, Theme.getColor(Theme.key_actionBarActionModeDefaultSelector), Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2), false);
         deleteItem.setIcon(R.drawable.msg_delete);
@@ -2006,6 +2030,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     if (mediaPage.fastScrollHintView != null) {
                         mediaPage.invalidate();
                     }
+                    hideRestrictHint();
                 }
             });
             mediaPages[a].listView.setOnItemLongClickListener((view, position) -> {
@@ -2140,6 +2165,26 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         switchToCurrentSelectedMode(false);
         if (hasMedia[0] >= 0) {
             loadFastScrollData(false);
+        }
+    }
+
+    protected void showRestrictHint(String hintText, View view) {
+        if (noForwardHint == null) {
+            FrameLayout frameLayout = (FrameLayout) profileActivity.getFragmentView();
+            noForwardHint = new HintView(getContext(), 2, false);
+            noForwardHint.setAlpha(1.0f);
+            noForwardHint.reInitTextView();
+            noForwardHint.setText(hintText);
+            noForwardHint.setVisibility(View.INVISIBLE);
+            frameLayout.addView(noForwardHint, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.NO_GRAVITY, 12, 0, 12, 0));
+        }
+
+        noForwardHint.showForView(view, true);
+    }
+
+    public void hideRestrictHint() {
+        if (noForwardHint != null) {
+            noForwardHint.hide();
         }
     }
 
@@ -2853,6 +2898,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         profileActivity.getNotificationCenter().removeObserver(this, NotificationCenter.messagePlayingDidReset);
         profileActivity.getNotificationCenter().removeObserver(this, NotificationCenter.messagePlayingPlayStateChanged);
         profileActivity.getNotificationCenter().removeObserver(this, NotificationCenter.messagePlayingDidStart);
+        profileActivity.getNotificationCenter().removeObserver(this, NotificationCenter.chatInfoDidLoad);
     }
 
     private void checkCurrentTabValid() {
@@ -3800,6 +3846,39 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     }
                 }
             }
+        } else if (id == NotificationCenter.chatInfoDidLoad) {
+            TLRPC.ChatFull chatFull = (TLRPC.ChatFull) args[0];
+            if (delegate.getCurrentChat() != null && chatFull.id == delegate.getCurrentChat().id) {
+                TLRPC.Chat chat = profileActivity.getMessagesController().getChat(chatFull.id);
+                allowForward = ChatObject.canForwardMessages(chat);
+
+                if (forwardItem != null) {
+                    int background = Theme.getColor(Theme.key_actionBarActionModeDefaultSelector);
+                    int iconColor = Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2);
+                    if (!allowForward) {
+                        background = 0;
+                        iconColor = Theme.getColor(Theme.key_windowBackgroundWhiteGrayLine);
+                    }
+                    forwardItem.setBackgroundDrawable(Theme.createSelectorDrawable(background, 1));
+                    forwardItem.setIconColor(iconColor);
+                    forwardItem.setIcon(R.drawable.msg_forward);
+                    forwardItem.setContentDescription(LocaleController.getString("Forward", R.string.Forward));
+                    forwardItem.setDuplicateParentStateEnabled(false);
+                    if (allowForward) {
+                        forwardItem.setOnClickListener(v -> onActionBarItemClick(forward));
+                    } else {
+                        forwardItem.setOnClickListener(v -> {
+                            if (delegate.getCurrentChat() != null) {
+                                isChannel = ChatObject.isChannel(delegate.getCurrentChat()) && !delegate.getCurrentChat().megagroup;
+                            } else {
+                                isChannel = true; // is okay?
+                            }
+                            String hint = isChannel ? LocaleController.getString( "ChannelForwardsRestrictedHint" , R.string.ChannelForwardsRestrictedHint) : LocaleController.getString( "GroupForwardsRestrictedHint" , R.string.GroupForwardsRestrictedHint);
+                            showRestrictHint(hint, v);
+                        });
+                    }
+                }
+            }
         }
     }
 
@@ -4502,7 +4581,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 int i = index - sharedMediaData[selectedMode].startOffset;
                 if (i >= 0 && i < sharedMediaData[selectedMode].messages.size()) {
                     PhotoViewer.getInstance().setParentActivity(profileActivity.getParentActivity());
-                    PhotoViewer.getInstance().openPhoto(sharedMediaData[selectedMode].messages, i, dialog_id, mergeDialogId, provider);
+                    PhotoViewer.getInstance().openPhoto(sharedMediaData[selectedMode].messages, i, dialog_id, mergeDialogId, provider, delegate.getCurrentChat());
                 }
             } else if (selectedMode == 2 || selectedMode == 4) {
                 if (view instanceof SharedAudioCell) {

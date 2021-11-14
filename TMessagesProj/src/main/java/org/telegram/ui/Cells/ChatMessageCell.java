@@ -609,6 +609,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     public boolean isChat;
     public boolean isBot;
     public boolean isMegagroup;
+    public boolean needDrawShareButton;
+    public boolean wasNeedDrawShareButton;
     public boolean isThreadChat;
     public boolean hasDiscussion;
     public boolean isPinned;
@@ -3070,7 +3072,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 currentMessageObject == messageObject && (isUserDataChanged() || photoNotSet) ||
                 lastPostAuthor != messageObject.messageOwner.post_author ||
                 wasPinned != isPinned ||
-                newReply != lastReplyMessage;
+                newReply != lastReplyMessage ||
+                wasNeedDrawShareButton != needDrawShareButton;
         boolean groupChanged = groupedMessages != currentMessagesGroup;
         boolean pollChanged = false;
         if (drawCommentButton || drawSideButton == 3 && !((hasDiscussion && messageObject.isLinkedToChat(linkedChatId) || isRepliesChat) && (currentPosition == null || currentPosition.siblingHeights == null && (currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) != 0 || currentPosition.siblingHeights != null && (currentPosition.flags & MessageObject.POSITION_FLAG_TOP) == 0))) {
@@ -3122,6 +3125,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
         if (messageChanged || dataChanged || groupChanged || pollChanged || widthChanged && messageObject.isPoll() || isPhotoDataChanged(messageObject) || pinnedBottom != bottomNear || pinnedTop != topNear) {
             wasPinned = isPinned;
+            wasNeedDrawShareButton = needDrawShareButton;
             pinnedBottom = bottomNear;
             pinnedTop = topNear;
             currentMessageObject = messageObject;
@@ -9606,6 +9610,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             if (!currentMessagesGroup.isDocuments && !currentPosition.last) {
                 return false;
             }
+        }
+        if (!needDrawShareButton) {
+            return false;
         }
         return messageObject.needDrawShareButton();
     }

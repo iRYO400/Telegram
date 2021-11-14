@@ -990,6 +990,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     consumed[1] = dyUnconsumed;
                     innerListView.scrollBy(0, dyUnconsumed);
                 }
+                if (sharedMediaLayout != null) {
+                    sharedMediaLayout.hideRestrictHint();
+                }
             }
         }
 

@@ -482,4 +482,13 @@ public class HintView extends FrameLayout {
         Integer color = resourcesProvider != null ? resourcesProvider.getColor(key) : null;
         return color != null ? color : Theme.getColor(key);
     }
+
+    public void reInitTextView() {
+        textView.setMaxLines(1);
+        textView.setSingleLine(true);
+        textView.setMaxWidth(AndroidUtilities.dp(300));
+        textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
+        textView.setPadding(AndroidUtilities.dp(12), AndroidUtilities.dp(8), AndroidUtilities.dp(12), AndroidUtilities.dp(8));
+        textView.setBackground(Theme.createRoundRectDrawable(AndroidUtilities.dp(6), getThemedColor(Theme.key_chat_gifSaveHintBackground)));
+    }
 }
