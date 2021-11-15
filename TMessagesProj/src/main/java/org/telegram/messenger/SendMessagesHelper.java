@@ -5469,7 +5469,13 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                             }
                         }
                     } else {
-                        AlertsCreator.processError(currentAccount, error, null, req);
+                        if (error.text != null && error.text == "CHAT_FORWARDS_RESTRICTED") {
+                            TLRPC.Peer peer=newMsgObj.fwd_from.from_id;
+                            getMessagesController().loadFullChat(peer.chat_id == 0 ? peer.channel_id : peer.chat_id, 0, true);
+                            AlertsCreator.processError(currentAccount, error, null, req, peer.chat_id == 0);
+                        } else {
+                            AlertsCreator.processError(currentAccount, error, null, req);
+                        }
                         isSentError = true;
                     }
                     if (isSentError) {
