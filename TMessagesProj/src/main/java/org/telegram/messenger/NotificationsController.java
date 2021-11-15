@@ -4322,7 +4322,7 @@ public class NotificationsController extends BaseController {
             }
             Intent msgHeardIntent = new Intent(ApplicationLoader.applicationContext, AutoMessageHeardReceiver.class);
             msgHeardIntent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
-            msgHeardIntent.setAction("org.telegram.messenger.ACTION_MESSAGE_HEARD");
+            msgHeardIntent.setAction("org.telegram.messenger.qalaigram.ACTION_MESSAGE_HEARD");
             msgHeardIntent.putExtra("dialog_id", dialogId);
             msgHeardIntent.putExtra("max_id", maxId);
             msgHeardIntent.putExtra("currentAccount", currentAccount);

@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "artifactType": {
+    "type": "APK",
+    "kind": "Directory"
+  },
+  "applicationId": "org.telegram.messenger.qalaigram",
+  "variantName": "afatRelease",
+  "elements": [
+    {
+      "type": "SINGLE",
+      "filters": [],
+      "versionCode": 24629,
+      "versionName": "8.2.1",
+      "outputFile": "app.apk"
+    }
+  ]
+}
