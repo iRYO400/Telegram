@@ -533,6 +533,10 @@ public class SimpleTextView extends View implements Drawable.Callback {
         wasLayout = true;
     }
 
+    public boolean isEmpty() {
+        return text == null || text.length() == 0;
+    }
+
     public int getTextWidth() {
         return textWidth + (rightDrawableInside ? (rightDrawable != null ? (int) (rightDrawable.getIntrinsicWidth() * rightDrawableScale) : 0) + (rightDrawable2 != null ? (int) (rightDrawable2.getIntrinsicWidth() * rightDrawableScale) : 0) : 0);
     }
