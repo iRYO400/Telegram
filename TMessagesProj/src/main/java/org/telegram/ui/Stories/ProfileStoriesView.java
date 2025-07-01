@@ -19,6 +19,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -485,15 +486,35 @@ public class ProfileStoriesView extends View implements NotificationCenter.Notif
 
     @Override
     protected void dispatchDraw(Canvas canvas) {
-        float rright = rightAnimated.set(this.right);
         float avatarPullProgress = Utilities.clamp((avatarContainer.getScaleX() - 1f) / 0.4f, 1f, 0f);
         float insetMain = AndroidUtilities.lerp(AndroidUtilities.dpf2(4f), AndroidUtilities.dpf2(3.5f), avatarPullProgress);
         insetMain *= progressToInsets;
-        float ax = avatarContainer.getX() + insetMain * avatarContainer.getScaleX();
-        float ay = avatarContainer.getY() + insetMain * avatarContainer.getScaleY();
-        float aw = (avatarContainer.getWidth() - insetMain * 2) * avatarContainer.getScaleX();
-        float ah = (avatarContainer.getHeight() - insetMain * 2) * avatarContainer.getScaleY();
-        rect1.set(ax, ay, ax + aw, ay + ah);
+
+        float scaleX = avatarContainer.getScaleX();
+        float scaleY = avatarContainer.getScaleY();
+
+        float ax = avatarContainer.getX() + insetMain * scaleX;
+        float ay = avatarContainer.getY() + insetMain * scaleY;
+
+        float baseX = ax - (avatarContainer.getWidth() * (scaleX - 1)) / 2;
+        float baseY = ay - (avatarContainer.getHeight() * (scaleY - 1)) / 2;
+
+        float aw = (avatarContainer.getWidth() - insetMain * 2) * scaleX;
+        float ah = (avatarContainer.getHeight() - insetMain * 2) * scaleY;
+        rect1.set(baseX, baseY, baseX + aw, baseY + ah);
+
+        Log.d("AvatarContainer", "avatarPullProgress: " + avatarPullProgress + ", insetMain=" + insetMain);
+        Log.d("AvatarContainer", "Base Position: x=" + baseX + ", y=" + baseY);
+        Log.d("AvatarContainer", "Position: x=" + avatarContainer.getX() + ", y=" + avatarContainer.getY());
+        Log.d("AvatarContainer", "Size: width=" + avatarContainer.getWidth() + ", height=" + avatarContainer.getHeight());
+        Log.d("AvatarContainer", "Scale: scaleX=" + avatarContainer.getScaleX() + ", scaleY=" + avatarContainer.getScaleY());
+
+//        Paint debugPaint = new Paint();
+//        debugPaint.setColor(0x66FF0000);
+//        debugPaint.setStyle(Paint.Style.STROKE);
+//        debugPaint.setStrokeWidth(dp(2f));
+//
+//        canvas.drawRect(rect1, debugPaint); // Draw borders
 
         float maxX = this.left;
         boolean needsSort = false;
