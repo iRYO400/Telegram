@@ -11,11 +11,11 @@ import android.graphics.Paint;
 import android.graphics.RadialGradient;
 import android.graphics.RectF;
 import android.graphics.Shader;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.MessagesController;
@@ -75,8 +75,7 @@ public class ProfileGiftsView extends View implements NotificationCenter.Notific
 
 
     private float left, right, cy;
-    private float expandRight, expandY;
-    private boolean expandRightPad;
+    private float expandY;
     private final AnimatedFloat expandRightPadAnimated = new AnimatedFloat(this, 0, 350, CubicBezierInterpolator.EASE_OUT_QUINT);
     private final AnimatedFloat rightAnimated = new AnimatedFloat(this, 0, 350, CubicBezierInterpolator.EASE_OUT_QUINT);
 
@@ -93,9 +92,7 @@ public class ProfileGiftsView extends View implements NotificationCenter.Notific
         }
     }
 
-    public void setExpandCoords(float right, boolean rightPadded, float y) {
-        this.expandRight = right;
-        this.expandRightPad = rightPadded;
+    public void setExpandCoords(float y) {
         this.expandY = y;
         invalidate();
     }
@@ -320,6 +317,12 @@ public class ProfileGiftsView extends View implements NotificationCenter.Notific
 
     public final AnimatedFloat animatedCount = new AnimatedFloat(this, 0, 320, CubicBezierInterpolator.EASE_OUT_QUINT);
 
+    private float avatarY;
+
+    public void setAvatarY(float y) {
+        this.avatarY = y;
+    }
+
     @Override
     protected void dispatchDraw(@NonNull Canvas canvas) {
         if (gifts.isEmpty() || expandProgress >= 1.0f) return;
@@ -340,60 +343,164 @@ public class ProfileGiftsView extends View implements NotificationCenter.Notific
 
         final float closedAlpha = Utilities.clamp01((float) (expandY - (AndroidUtilities.statusBarHeight + ActionBar.getCurrentActionBarHeight())) / dp(50));
 
+        float offset = AndroidUtilities.statusBarHeight + AndroidUtilities.dp(16);
+        float progress = 1 - Math.max(0f, Math.min(1f, avatarY / offset));
+
+        float slow = (float) Math.pow(progress, 1.5f);
+        float normal = (float) Math.pow(progress, 1f);
+        float fast = (float) Math.pow(progress, 0.5f);
+
+        float delayedScale = progress <= 0.4f ? 1f : 1f - ((progress - 0.4f) / 0.6f) * 0.5f;
+        float defaultScale = lerp(1f, 0f, progress);
+        float fastScale = lerp(1f, 0f, progress);
+
+//        Log.d("KONOHA", "dispatchDraw: progress= " + progress + " expandY= " + expandY + " expandProgress=" + expandProgress + " avatarY=" + avatarY);
         for (int i = 0; i < gifts.size(); ++i) {
+            if (i > 6) return;
+
             final Gift gift = gifts.get(i);
             final float alpha = gift.animatedFloat.set(1.0f);
             final float scale = lerp(0.5f, 1.0f, alpha);
-            final int index = i; // gifts.size() == maxCount ? i - 1 : i;
-            if (index == 0) {
+
+            final float avatarSize = AndroidUtilities.dp(ProfileActivity.A_S) * avatarContainer.getScaleX();
+            float viewLeft = avatarContainer.getX() + (AndroidUtilities.dp(ProfileActivity.A_S) * (1 - avatarContainer.getScaleX()) / 2);
+            float viewRight = viewLeft + avatarSize;
+            float viewTop = avatarContainer.getY();
+            float viewBot = viewTop + avatarSize;
+
+            final int index = i;
+            if (index == 0) { // left-up
+                float xDissolve = expandProgress * AndroidUtilities.dp(-500);
+                float yDissolve = expandProgress * AndroidUtilities.dp(-250);
+                float startX = viewLeft - AndroidUtilities.dp(12) - AndroidUtilities.dp(16) + xDissolve;
+                float startY = viewTop + yDissolve;
+                float endX = viewLeft + avatarSize / 2f;
+                float endY = viewTop + avatarSize / 2f;
+                float controlX = (startX + endX) / 2f;
+                float controlY = startY + AndroidUtilities.dp(50);
+
+                float newX = calculateQuadraticBezier(fast, startX, controlX, endX);
+                float newY = calculateQuadraticBezier(fast, startY, controlY, endY);
+
                 gift.draw(
-                    canvas,
-                    (float) (acx + ar * Math.cos(-65 / 180.0f * Math.PI)),
-                    (float) (acy + ar * Math.sin(-65 / 180.0f * Math.PI)),
-                    scale, -65 + 90,
-                    alpha * (1.0f - expandProgress), lerp(0.9f, 0.25f, actionBarProgress)
+                        canvas,
+                        newX,
+                        newY,
+                        fastScale,
+                        0f,
+                        alpha * (1.0f - expandProgress),
+                        1.0f
                 );
-            } else if (index == 1) {
+            } else if (index == 5) { // right-bot
+                float xDissolve = expandProgress * AndroidUtilities.dp(500);
+                float yDissolve = expandProgress * AndroidUtilities.dp(250);
+                float startX = viewRight + AndroidUtilities.dp(12) + AndroidUtilities.dp(16) + xDissolve;
+                float startY = viewBot + yDissolve;
+                float endX = viewRight - avatarSize / 2f;
+                float endY = viewBot - avatarSize / 2f;
+                float controlX = (startX + endX) / 2f;
+                float controlY = startY - AndroidUtilities.dp(30);
+
+                float newX = calculateQuadraticBezier(fast, startX, controlX, endX);
+                float newY = calculateQuadraticBezier(fast, startY, controlY, endY);
+
+                gift.draw(
+                        canvas,
+                        newX,
+                        newY,
+                        fastScale,
+                        0f,
+                        alpha * (1.0f - expandProgress) * (1.0f - actionBarProgress) * (closedAlpha),
+                        1.0f
+                );
+            } else if (index == 1) { // right-up
+                float xDissolve = expandProgress * AndroidUtilities.dp(500);
+                float yDissolve = expandProgress * AndroidUtilities.dp(-250);
+                float startX = viewRight + AndroidUtilities.dp(12) + AndroidUtilities.dp(32) + xDissolve;
+                float startY = viewTop + yDissolve;
+                float endX = viewRight - avatarSize / 2f;
+                float endY = viewTop + avatarSize / 2f;
+                float controlX = viewRight;
+                float controlY = startY + avatarSize;
+
+                float newX = calculateQuadraticBezier(normal, startX, controlX, endX);
+                float newY = calculateQuadraticBezier(normal, startY, controlY, endY);
+
                 gift.draw(
                     canvas,
-                    lerp(cacx + Math.min(getWidth() * .27f, dp(62)), cx, 0.5f * actionBarProgress), acy - dp(52),
-                    scale, -4.0f,
+                        newX,
+                        newY,
+                        defaultScale,
+                        0f,
                     alpha * alpha * (1.0f - expandProgress) * (1.0f - actionBarProgress) * (closedAlpha),
                     1.0f
                 );
-            } else if (index == 2) {
+            } else if (index == 4) { // left-bot
+                float xDissolve = expandProgress * AndroidUtilities.dp(-500);
+                float yDissolve = expandProgress * AndroidUtilities.dp(250);
+                float startX = viewLeft - AndroidUtilities.dp(12) - AndroidUtilities.dp(32) + xDissolve;
+                float startY = viewBot + yDissolve;
+                float endX = viewLeft + avatarSize / 2f;
+                float endY = viewBot - avatarSize / 2f;
+                float controlX = (startX + endX) / 2f;
+                float controlY = startY + avatarSize / 2f;
+
+                float newX = calculateQuadraticBezier(normal, startX, controlX, endX);
+                float newY = calculateQuadraticBezier(normal, startY, controlY, endY);
+
+                gift.draw(
+                        canvas,
+                        newX,
+                        newY,
+                        defaultScale,
+                        0f,
+                        alpha * (1.0f - expandProgress) * (1.0f - actionBarProgress) * (closedAlpha),
+                        1.0f
+                );
+            } else if (index == 2) { // left-center
+                float xDissolve = expandProgress * AndroidUtilities.dp(-500);
+                float startX = viewLeft - AndroidUtilities.dp(12) - AndroidUtilities.dp(60) + xDissolve;
+                float startY = viewBot - avatarSize / 2f;
+                float endX = viewLeft + avatarSize / 2f;
+                float endY = viewBot - avatarSize / 2f;
+                float controlX = (startX + endX) / 2f;
+                float controlY = startY + AndroidUtilities.dp(50);
+
+                float newX = calculateQuadraticBezier(slow, startX, controlX, endX);
+                float newY = calculateQuadraticBezier(slow, startY, controlY, endY);
+
                 gift.draw(
                     canvas,
-                    lerp(cacx + Math.min(getWidth() * .46f, dp(105)), cx, 0.5f * actionBarProgress), acy - dp(72),
-                    scale, 8.0f,
+                        newX,
+                        newY,
+                        delayedScale,
+                0f,
                     alpha * (1.0f - expandProgress) * (1.0f - actionBarProgress) * (closedAlpha),
                     1.0f
                 );
-            } else if (index == 3) {
+            } else if (index == 3) { // right-center
+                float xDissolve = expandProgress * AndroidUtilities.dp(500);
+                float startX = viewRight + AndroidUtilities.dp(12) + AndroidUtilities.dp(60) + xDissolve;
+                float startY = viewBot - avatarSize / 2f;
+                float endX = viewRight - avatarSize / 2f;
+                float endY = viewBot - avatarSize / 2f;
+                float controlX = (startX + endX) / 2f;
+                float controlY = startY + AndroidUtilities.dp(50);
+
+                float newX = calculateQuadraticBezier(slow, startX, controlX, endX);
+                float newY = calculateQuadraticBezier(slow, startY, controlY, endY);
+
                 gift.draw(
                     canvas,
-                    lerp(cacx + Math.min(getWidth() * .60f, dp(136)), cx, 0.5f * actionBarProgress), acy - dp(46),
-                    scale, 3.0f,
+                        newX,
+                        newY,
+                        delayedScale,
+                        0f,
                     alpha * (1.0f - expandProgress) * (1.0f - actionBarProgress) * (closedAlpha),
                     1.0f
                 );
-            } else if (index == 4) {
-                gift.draw(
-                    canvas,
-                    lerp(cacx + Math.min(getWidth() * .08f, dp(21.6f)), cx, 0.5f * actionBarProgress), acy - dp(82f),
-                    scale, -3.0f,
-                    alpha * (1.0f - expandProgress) * (1.0f - actionBarProgress) * (closedAlpha),
-                    1.0f
-                );
-            } else if (index == 5) {
-                gift.draw(
-                    canvas,
-                    lerp(cacx + Math.min(getWidth() * .745f, dp(186)), cx, 0.5f * actionBarProgress), acy - dp(39),
-                    scale, 2.0f,
-                    alpha * (1.0f - expandProgress) * (1.0f - actionBarProgress) * (closedAlpha),
-                    1.0f
-                );
-            } else if (index == 6) {
+            }
+            else if (index == 6) {
                 gift.draw(
                     canvas,
                     cacx + Math.min(getWidth() * .38f, dp(102)), expandY - dp(12),
@@ -462,5 +569,16 @@ public class ProfileGiftsView extends View implements NotificationCenter.Notific
 
     public void onGiftClick(Gift gift) {
         Browser.openUrl(getContext(), "https://t.me/nft/" + gift.slug);
+    }
+
+    public static float calculateQuadraticBezier(float t, float start, float control, float end) {
+        return (1 - t) * (1 - t) * start + 2 * (1 - t) * t * control + t * t * end;
+    }
+
+    public static float calculateCubicBezier(float t, float start, float control1, float control2, float end) {
+        return (1 - t) * (1 - t) * (1 - t) * start
+                + 3 * (1 - t) * (1 - t) * t * control1
+                + 3 * (1 - t) * t * t * control2
+                + t * t * t * end;
     }
 }

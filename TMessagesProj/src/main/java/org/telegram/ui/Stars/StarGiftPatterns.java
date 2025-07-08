@@ -275,7 +275,6 @@ public class StarGiftPatterns {
                     (int) (centerX + dpf2(x) + dpf2(size) / 2.0f),
                     (int) (centerY + dpf2(y) + dpf2(size) / 2.0f)
             );
-
             pattern.setAlpha((int) (0xFF * a * thisAlpha));
             pattern.draw(canvas);
         }

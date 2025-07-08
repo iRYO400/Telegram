@@ -4929,6 +4929,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         frameLayout.addView(avatarContainer2, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.START, 0, 0, 0, 0));
 //        avatarContainer.setPivotX(0);
 //        avatarContainer.setPivotY(0);
+        giftsView = new ProfileGiftsView(context, currentAccount, getDialogId(), avatarContainer, avatarImage, resourcesProvider);
+        avatarContainer2.addView(giftsView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         avatarContainer2.addView(avatarContainer, LayoutHelper.createFrame(A_S, A_S, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 0, 0, 0)); // 80 with rounding as 40
         avatarImage = new AvatarImageView(context) {
             @Override
@@ -5306,8 +5308,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             avatarImage.setHasStories(needInsetForStories());
         }
         avatarContainer2.addView(storyView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
-        giftsView = new ProfileGiftsView(context, currentAccount, getDialogId(), avatarContainer, avatarImage, resourcesProvider);
-        avatarContainer2.addView(giftsView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         updateProfileData(true);
 
         writeButton = new RLottieImageView(context);
@@ -7416,7 +7416,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     storyView.setExpandCoords(avatarContainer2.getMeasuredWidth() - AndroidUtilities.dp(40), writeButtonVisible, (actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0) + ActionBar.getCurrentActionBarHeight() + extraHeight + searchTransitionOffset);
                 }
                 if (giftsView != null) {
-                    giftsView.setExpandCoords(avatarContainer2.getMeasuredWidth() - AndroidUtilities.dp(40), writeButtonVisible, (actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0) + ActionBar.getCurrentActionBarHeight() + extraHeight + searchTransitionOffset);
+                    giftsView.setExpandCoords((actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0) + ActionBar.getCurrentActionBarHeight() + extraHeight + searchTransitionOffset);
                 }
             }
 
@@ -7429,6 +7429,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             float smoothedExpand = (float) Math.pow(expandProgress, 2f) * (3 - 2 * expandProgress) * 0.5f; // Ease-in-out
             float expandOffsetY = (statusBarHeight + ActionBar.getCurrentActionBarHeight()) * smoothedExpand / E_L;
             avatarY = minimizeOffsetY + expandOffsetY + (statusBarHeight + AndroidUtilities.dp(16)) * diff; // minimized + expanded + default
+
+            if (giftsView != null) {
+                giftsView.setAvatarY(avatarY);
+            }
 
             float topOffset = (actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0) + ActionBar.getCurrentActionBarHeight();
             float defaultButtonsY = topOffset + extraHeight - AndroidUtilities.dp(16) - buttonsContainer.getMeasuredHeight();
