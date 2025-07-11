@@ -363,6 +363,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private LinearLayout buttonsContainer;
     private DrawerProfileCell.AnimatedStatusView animatedStatusView;
     private AvatarImageView avatarImage;
+    private AvatarImageView avatarImageBlurred;
+    private Bitmap avatarImageBlurredBitmap;
     private View avatarOverlay;
     private AnimatorSet avatarAnimation;
     private RadialProgressView avatarProgressView;
@@ -1184,6 +1186,15 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         canvas.restore();
                     }
                 }
+
+                canvas.save();
+                canvas.clipRect(0, 0, getMeasuredWidth(), y1);
+                int p1 = (actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0) + dp(144);
+                float p2 = (1f - extraHeight / dp(E_H)) * dp(50);
+                float h2o = p1 - p2;
+                AnimatedCircle.draw(canvas, getMeasuredWidth(), h2o, avatarContainer);
+                canvas.restore();
+
                 if (previousTransitionFragment != null) {
                     ActionBar actionBar = previousTransitionFragment.getActionBar();
                     ActionBarMenu menu = actionBar.menu;
@@ -3660,6 +3671,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         listView = new ClippedListView(context) {
 
             private VelocityTracker velocityTracker;
+            private float velocityTrackerY;
 
             @Override
             protected boolean canHighlightChildAt(View child, float x, float y) {
@@ -3723,21 +3735,41 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     }
                 } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
                     if (velocityTracker != null) {
+                        velocityTracker.computeCurrentVelocity(1000);
+                        velocityTrackerY = velocityTracker.getYVelocity(e.getPointerId(e.getActionIndex()));
                         velocityTracker.recycle();
                         velocityTracker = null;
                     }
                 }
                 final boolean result = super.onTouchEvent(e);
                 if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
-                    if (allowPullingDown) {
-                        final View view = layoutManager.findViewByPosition(0);
-                        if (view != null) {
+                    final View view = layoutManager.findViewByPosition(0);
+                    if (view != null) {
+                        if (allowPullingDown) {
                             if (isPulledDown) {
-                                final int actionBarHeight = ActionBar.getCurrentActionBarHeight() + (actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0);
+//                                final int actionBarHeight = ActionBar.getCurrentActionBarHeight() + (actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0);
 //                                Log.d(TAG, "onTouchEvent: view.getTop=" + view.getTop() + ", actionBarHeight=" + actionBarHeight + ", listView.getMeasuredWidth=" + listView.getMeasuredWidth());
 //                                listView.smoothScrollBy(0, view.getTop() - listView.getMeasuredWidth() + AndroidUtilities.dp(64), CubicBezierInterpolator.EASE_OUT_QUINT);
                             } else {
-                                listView.smoothScrollBy(0, view.getTop() - AndroidUtilities.dp(E_H), CubicBezierInterpolator.EASE_OUT_QUINT); // leave it
+                                listView.smoothScrollBy(0, view.getTop() - dp(E_H), CubicBezierInterpolator.EASE_OUT_QUINT); // leave it
+                            }
+                        } else {
+//                            Log.d(TAG, "onTouchEvent: velocityY=" + velocityTrackerY);
+                            int dy = 0;
+                            if (extraHeight < (dp(E_H - (avatarScale * A_S)))) {
+                                if (velocityTrackerY > 0) {
+                                    dy = view.getTop() - dp(E_H);
+                                } else {
+                                    dy = view.getTop();
+                                }
+                                listView.smoothScrollBy(0, dy, CubicBezierInterpolator.EASE_OUT_QUINT);
+                            } else {
+                                if (velocityTrackerY > 0) {
+                                    dy = view.getTop();
+                                } else {
+                                    dy = view.getTop() - dp(E_H);
+                                }
+                                listView.smoothScrollBy(0, dy, CubicBezierInterpolator.EASE_OUT_QUINT);
                             }
                         }
                     }
@@ -4843,7 +4875,130 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         animatedStatusView.setPivotX(AndroidUtilities.dp(30));
         animatedStatusView.setPivotY(AndroidUtilities.dp(30));
 
-        avatarContainer = new FrameLayout(context);
+        avatarContainer = new FrameLayout(context) {
+
+            @Override
+            public void setTranslationX(float translationX) {
+                super.setTranslationX(translationX);
+                if (avatarImageBlurred != null) {
+                    avatarImageBlurred.setTranslationX(translationX);
+                }
+                if (avatarOverlay != null) {
+                    avatarOverlay.setTranslationX(translationX);
+                }
+            }
+
+            @Override
+            public void setTranslationY(float translationY) {
+                super.setTranslationY(translationY);
+                if (avatarImageBlurred != null) {
+                    avatarImageBlurred.setTranslationY(translationY);
+                }
+                if (avatarOverlay != null) {
+                    avatarOverlay.setTranslationY(translationY);
+                }
+            }
+
+            @Override
+            public void setVisibility(int visibility) {
+                super.setVisibility(visibility);
+                if (avatarImageBlurred != null) {
+                    avatarImageBlurred.setVisibility(visibility);
+                }
+                if (avatarOverlay != null) {
+                    avatarOverlay.setVisibility(visibility);
+                }
+            }
+
+            @Override
+            public void setPivotX(float pivotX) {
+                super.setPivotX(pivotX);
+                if (avatarImageBlurred != null) {
+                    avatarImageBlurred.setPivotX(pivotX);
+                }
+                if (avatarOverlay != null) {
+                    avatarOverlay.setPivotX(pivotX);
+                }
+            }
+
+            @Override
+            public void setPivotY(float pivotY) {
+                super.setPivotY(pivotY);
+                if (avatarImageBlurred != null) {
+                    avatarImageBlurred.setPivotY(pivotY);
+                }
+                if (avatarOverlay != null) {
+                    avatarOverlay.setPivotY(pivotY);
+                }
+            }
+
+            @Override
+            public void setScaleX(float scaleX) {
+                super.setScaleX(scaleX);
+                if (avatarImageBlurred != null) {
+                    avatarImageBlurred.setScaleX(scaleX);
+                }
+                if (avatarOverlay != null) {
+                    avatarOverlay.setScaleX(scaleX);
+                }
+            }
+
+            @Override
+            public void setScaleY(float scaleY) {
+                super.setScaleY(scaleY);
+                if (avatarImageBlurred != null) {
+                    avatarImageBlurred.setScaleY(scaleY);
+                }
+                if (avatarOverlay != null) {
+                    avatarOverlay.setScaleY(scaleY);
+                }
+            }
+
+            @Override
+            public void setClickable(boolean clickable) {
+                super.setClickable(clickable);
+                if (avatarImageBlurred != null) {
+                    avatarImageBlurred.setClickable(clickable);
+                }
+            }
+        };
+
+        avatarOverlay = new View(context);
+        avatarOverlay.setAlpha(0f);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            avatarOverlay.setBackgroundColor(Color.BLACK);
+            avatarOverlay.setClipToOutline(true);
+            avatarOverlay.setOutlineProvider(new ViewOutlineProvider() {
+                @Override
+                public void getOutline(View view, Outline outline) {
+                    outline.setRoundRect(0, 0, view.getMeasuredHeight(), view.getMeasuredHeight(), dp(A_R));
+                }
+            });
+        } else {
+            GradientDrawable shape = new GradientDrawable();
+            shape.setColor(Color.BLACK);
+            shape.setCornerRadius(A_R);
+            avatarOverlay.setBackgroundDrawable(shape);
+        }
+
+        avatarImageBlurred = new AvatarImageView(context);
+        avatarImageBlurred.setAlpha(0f);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            avatarImageBlurred.setClipToOutline(true);
+            avatarImageBlurred.setOutlineProvider(new ViewOutlineProvider() {
+                @Override
+                public void getOutline(View view, Outline outline) {
+                    outline.setRoundRect(0, 0, view.getMeasuredHeight(), view.getMeasuredHeight(), dp(A_R));
+                }
+            });
+        } else {
+            GradientDrawable shape = new GradientDrawable();
+            shape.setCornerRadius(A_R);
+            avatarImageBlurred.setBackgroundDrawable(shape);
+        }
+
         avatarContainer2 = new FrameLayout(context) {
 
             CanvasButton canvasButton;
@@ -4931,7 +5086,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 //        avatarContainer.setPivotY(0);
         giftsView = new ProfileGiftsView(context, currentAccount, getDialogId(), avatarContainer, avatarImage, resourcesProvider);
         avatarContainer2.addView(giftsView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
-        avatarContainer2.addView(avatarContainer, LayoutHelper.createFrame(A_S, A_S, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 0, 0, 0)); // 80 with rounding as 40
         avatarImage = new AvatarImageView(context) {
             @Override
             public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info) {
@@ -4958,6 +5112,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         avatarImage.getImageReceiver().setAllowDecodeSingleFrame(true);
         avatarImage.setRoundRadius(getSmallAvatarRoundRadius());
         avatarContainer.addView(avatarImage, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+        avatarContainer2.addView(avatarContainer, LayoutHelper.createFrame(A_S, A_S, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 0, 0, 0)); // 80 with rounding as 40
+        avatarContainer2.addView(avatarOverlay, LayoutHelper.createFrame(A_S, A_S, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 0, 0, 0));
+        avatarContainer2.addView(avatarImageBlurred, LayoutHelper.createFrame(A_S, A_S, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 0, 0, 0));
         avatarImage.setOnClickListener(v -> {
             if (avatarBig != null) {
                 return;
@@ -7343,7 +7500,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             final float diff = Math.min(1f, extraHeight / AndroidUtilities.dp(E_H));
 
             listView.setTopGlowOffset((int) extraHeight);
-
             listView.setOverScrollMode(extraHeight > AndroidUtilities.dp(E_H) && extraHeight < listView.getMeasuredWidth() - newTop ? View.OVER_SCROLL_NEVER : View.OVER_SCROLL_ALWAYS);
 
             if (writeButton != null) {
@@ -7678,6 +7834,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     avatarContainer.setScaleY(avatarScale);
                     avatarContainer.setTranslationX(avatarX);
                     avatarContainer.setTranslationY((float) Math.ceil(avatarY));
+
+                    refreshAvatarBlurAndOverlay(diff);
+
                     float extra = AndroidUtilities.dp(A_S) * avatarScale - AndroidUtilities.dp(A_S);
                     timeItem.setTranslationX(avatarContainer.getX() + AndroidUtilities.dp(16) + extra);
                     timeItem.setTranslationY(avatarContainer.getY() + AndroidUtilities.dp(15) + extra);
@@ -7754,6 +7913,22 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
             if (!openAnimationInProgress && (expandAnimator == null || !expandAnimator.isRunning())) {
                 needLayoutText(diff);
+            }
+
+            if (avatarImageBlurredBitmap == null && diff >= 1) {
+                if (avatarContainer.getMeasuredWidth() > 0 && animated && avatarImage.getRoundRadius()[0] == getSmallAvatarRoundRadius()) {
+//                    avatarImage.setBlurAllowed(true);
+//                    avatarImage.setHasBlur(true);
+
+                    Bitmap bmp = Bitmap.createBitmap(avatarContainer.getMeasuredWidth(), avatarContainer.getMeasuredHeight(), Bitmap.Config.ARGB_8888);
+                    Canvas c = new Canvas(bmp);
+
+                    avatarContainer.layout(avatarContainer.getLeft(), avatarContainer.getTop(), avatarContainer.getRight(), avatarContainer.getBottom());
+                    avatarContainer.draw(c);
+
+                    avatarImageBlurredBitmap = Utilities.stackBlurBitmapMax(bmp);
+                    avatarImageBlurred.setImageBitmap(avatarImageBlurredBitmap);
+                }
             }
         }
 
@@ -7840,6 +8015,18 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             }
             avatarImage.setForegroundImage(location, filter, drawable);
         }
+    }
+
+    private void refreshAvatarBlurAndOverlay(float diff) {
+        float progress = 1 - diff;
+        float shiftedProgress = (progress - 0.3f) / 0.4f; // set range between 0.3 and 0.7 (0.3 + 0.4)
+        shiftedProgress = Utilities.clamp(shiftedProgress, 1f, 0f);
+
+        float alpha = lerp(0, 1f, shiftedProgress);
+        avatarOverlay.setAlpha(alpha);
+
+        float bezierAlpha = ProfileGiftsView.calculateQuadraticBezier(progress, 0, 0.8f, 0);
+        avatarImageBlurred.setAlpha(bezierAlpha);
     }
 
     private void refreshNameAndOnlineXY() { // avatarY is static when this is called
@@ -14867,9 +15054,70 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 iconDrawable.setBounds(iconX, iconY, iconX + iconSize, iconY + iconSize);
                 iconDrawable.draw(canvas);
             }
+        }
+    }
 
-//            // Нарисовать текст
-//            canvas.drawText(text, getWidth() / 2f, textY, textPaint);
+    public static class AnimatedCircle {
+
+        private final static Paint paint = new Paint();
+
+        static {
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(Color.BLACK);
+            paint.setAntiAlias(true);
+        }
+
+        public static void draw(Canvas canvas, float w, float h, View avatarContainer) {
+            float centerX = w / 2;
+            float centerY = avatarContainer.getY() + (avatarContainer.getMeasuredHeight() * avatarContainer.getScaleY() / 2f);
+            float radius = (avatarContainer.getMeasuredWidth() * avatarContainer.getScaleX() / 2f); // + dp(4);
+
+            if (avatarContainer.getScaleY() < 0.875f) {
+                canvas.drawCircle(centerX, centerY, radius, paint);
+            }
+
+            if (avatarContainer.getScaleY() < 0.875f) {
+                float maxScale = (A_S + 18f) / A_S;
+                float minScale = (A_S - A_H) / A_S;
+                float progress = (maxScale - avatarContainer.getScaleY()) / (maxScale - minScale);
+                progress = Math.max(0, Math.min(1, progress));
+                
+                float yOffset = 44 - avatarContainer.getY();
+
+                Log.d(TAG, "AnimatedCircle#draw: progress=" + progress + ", yOffset=" + yOffset);
+                Path path = new Path();
+                if (avatarContainer.getY() <= 0) {
+                    float previousY = 0f;
+                    previousY = Math.max(previousY, yOffset);
+                    float newY = avatarContainer.getY() + avatarContainer.getMeasuredHeight() * avatarContainer.getScaleY();
+
+                    float normalized2 = Math.min((avatarContainer.getY() - 0) / (AndroidUtilities.dp(-A_S) - 0), 1f);
+                    float y = ProfileGiftsView.calculateQuadraticBezier(normalized2, previousY, newY, AndroidUtilities.dp(-A_H));
+//                    Log.d(TAG, "AnimatedCircle#draw: previousY=" + previousY + " newY=" + newY + " y=" + y + " realY=" + avatarContainer.getY()  + " normalized2=" + normalized2);
+
+                    float r = lerp(radius, radius * 2, normalized2);
+
+                    float startLeftX = centerX - (radius / 4);
+                    float startRightX = centerX + (radius / 4);
+                    float endLeftX = centerX;
+                    float endRightX = centerX;
+                    float controlLeftX = centerX - r - AndroidUtilities.dp(4);
+                    float controlRightX = centerX + r + AndroidUtilities.dp(4);
+                    float leftX = ProfileGiftsView.calculateQuadraticBezier(normalized2, startLeftX, controlLeftX, endLeftX);
+                    float rightX = ProfileGiftsView.calculateQuadraticBezier(normalized2, startRightX, controlRightX, endRightX);
+
+                    path.moveTo(centerX - r, 0);
+                    path.cubicTo(leftX, 0, leftX, y, centerX, y);
+                    path.cubicTo(rightX, y, rightX, 0, centerX + r, 0);
+                } else {
+                    float leftX = centerX - (radius / 4);
+                    float rightY = centerX + (radius / 4);
+                    path.moveTo(centerX - radius, 0);
+                    path.cubicTo(leftX, 0, leftX, yOffset, centerX, yOffset);
+                    path.cubicTo(rightY, yOffset, rightY, 0, centerX + radius, 0);
+                }
+                canvas.drawPath(path, paint);
+            }
         }
     }
 }

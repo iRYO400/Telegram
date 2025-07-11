@@ -265,7 +265,7 @@ public class StarGiftPatterns {
             if (adjustedAlpha > 0 && adjustedAlpha <= threshold) {
                 x = xOriginal / (threshold / adjustedAlpha);
                 y = yOriginal / (threshold / adjustedAlpha);
-                Log.d("KONOHA", "drawProfileCenteredPattern: x = " + x + " y = " + y + " originalX=" + xOriginal + " originalY=" + yOriginal + " threshold = " + threshold + " adjustedAlpha = " + adjustedAlpha + " of originalAlphat=" + a);
+//                Log.d("KONOHA", "drawProfileCenteredPattern: x = " + x + " y = " + y + " originalX=" + xOriginal + " originalY=" + yOriginal + " threshold = " + threshold + " adjustedAlpha = " + adjustedAlpha + " of originalAlphat=" + a);
             }
 
             final float size = sizeOriginal * (1 - (1 - a) * (1 - a));
